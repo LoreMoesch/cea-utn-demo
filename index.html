@@ -1,0 +1,1991 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>CEA-UTN – Evaluación de Carreras a Distancia</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:"Segoe UI",Arial,sans-serif;background:#f0f2f5;min-height:100vh;color:#1a1a2e}
+:root{
+  --azul:#003087;--azul2:#1565C0;--celeste:#E3F2FD;
+  --verde:#2E7D32;--verde-c:#E8F5E9;
+  --amarillo:#F57F17;--amarillo-c:#FFF8E1;
+  --rojo:#C62828;--rojo-c:#FFEBEE;
+  --gris:#546E7A;--gris-c:#ECEFF1;
+  --sombra:0 2px 8px rgba(0,0,0,0.12);--radio:10px;
+}
+.login-bg{min-height:100vh;display:flex;align-items:center;justify-content:center;background:linear-gradient(135deg,#003087 0%,#1565C0 60%,#42A5F5 100%)}
+.login-card{background:#fff;border-radius:20px;padding:48px 40px;width:440px;box-shadow:0 20px 60px rgba(0,0,48,0.3)}
+.login-logo{text-align:center;margin-bottom:32px}
+.logo-badge{width:72px;height:72px;background:#003087;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;margin-bottom:12px}
+.logo-badge span{color:#fff;font-size:22px;font-weight:700}
+.login-logo h1{font-size:20px;font-weight:700;color:#003087}
+.login-logo p{font-size:13px;color:#546E7A;margin-top:4px}
+.form-group{margin-bottom:18px}
+.form-group label{display:block;font-size:13px;font-weight:600;color:#37474F;margin-bottom:6px}
+.form-group input,.form-group select{width:100%;padding:11px 14px;border:1.5px solid #CFD8DC;border-radius:8px;font-size:14px;color:#1a1a2e;background:#fff;transition:border-color .2s;font-family:inherit}
+.form-group input:focus{outline:none;border-color:#1565C0;box-shadow:0 0 0 3px rgba(21,101,192,0.12)}
+.btn-login{width:100%;padding:13px;background:#003087;color:#fff;border:none;border-radius:8px;font-size:15px;font-weight:600;cursor:pointer;transition:background .2s;font-family:inherit;margin-bottom:10px}
+.btn-login:hover{background:#1565C0}
+.btn-recup{width:100%;padding:10px;background:transparent;color:#1565C0;border:1.5px solid #1565C0;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;font-family:inherit;transition:all .2s}
+.btn-recup:hover{background:#E3F2FD}
+.demo-box{margin-top:18px;padding:14px;background:#E3F2FD;border-radius:8px;font-size:11.5px;color:#1565C0;line-height:1.8}
+.error-msg{background:#FFEBEE;color:#C62828;border:1px solid #FFCDD2;border-radius:7px;padding:10px 14px;font-size:13px;margin-bottom:14px}
+.ok-msg{background:#E8F5E9;color:#2E7D32;border:1px solid #A5D6A7;border-radius:7px;padding:10px 14px;font-size:13px;margin-bottom:14px}
+/* LAYOUT */
+.app{display:flex;min-height:100vh}
+.sidebar{width:248px;background:#003087;color:#fff;display:flex;flex-direction:column;position:fixed;top:0;left:0;height:100vh;z-index:100;overflow-y:auto}
+.sb-logo{padding:22px 18px 14px;border-bottom:1px solid rgba(255,255,255,0.1)}
+.sb-badge{width:42px;height:42px;background:rgba(255,255,255,0.15);border-radius:10px;display:inline-flex;align-items:center;justify-content:center;font-size:15px;font-weight:700;margin-bottom:7px}
+.sb-logo h2{font-size:14px;font-weight:700}
+.sb-logo p{font-size:11px;opacity:.6;margin-top:2px}
+.sb-nav{flex:1;padding:14px 10px}
+.nav-sec{font-size:10px;font-weight:700;letter-spacing:1px;opacity:.45;text-transform:uppercase;margin:14px 0 5px 8px}
+.nav-item{display:flex;align-items:center;gap:9px;padding:9px 11px;border-radius:7px;cursor:pointer;font-size:13px;font-weight:500;margin-bottom:2px;transition:background .15s;position:relative;border:none;background:none;color:#fff;width:100%;text-align:left}
+.nav-item:hover:not(:disabled){background:rgba(255,255,255,0.1)}
+.nav-item.active{background:rgba(255,255,255,0.18)}
+.nav-item:disabled{opacity:.35;cursor:not-allowed}
+.escala-mini{padding:8px 11px}
+.escala-row{display:flex;align-items:center;gap:7px;margin-bottom:5px}
+.escala-dot{width:20px;height:20px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;flex-shrink:0}
+.escala-txt{font-size:11px;opacity:.7;line-height:1.3}
+.sb-user{padding:14px;border-top:1px solid rgba(255,255,255,0.1)}
+.u-name{font-size:13px;font-weight:600}
+.u-role{font-size:11px;opacity:.55;margin-top:2px}
+.role-badge-sb{display:inline-block;margin-top:5px;padding:2px 8px;border-radius:10px;font-size:10px;font-weight:700}
+.btn-logout{margin-top:9px;width:100%;padding:7px;background:rgba(255,255,255,0.08);color:#fff;border:1px solid rgba(255,255,255,0.18);border-radius:6px;cursor:pointer;font-size:12px;font-family:inherit;transition:background .15s}
+.btn-logout:hover{background:rgba(255,255,255,0.18)}
+/* TOPBAR */
+.topbar{position:fixed;top:0;left:248px;right:0;height:58px;background:#fff;border-bottom:1px solid #E0E0E0;display:flex;align-items:center;justify-content:space-between;padding:0 26px;z-index:50}
+.topbar h3{font-size:17px;font-weight:600;color:#1a1a2e}
+.topbar-r{display:flex;align-items:center;gap:12px}
+.user-avatar{width:34px;height:34px;border-radius:50%;background:#003087;color:#fff;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700}
+.content{margin-left:248px;margin-top:58px;padding:26px;min-height:calc(100vh - 58px)}
+/* CARDS */
+.card{background:#fff;border-radius:var(--radio);box-shadow:var(--sombra);margin-bottom:18px}
+.card-hdr{padding:16px 20px;border-bottom:1px solid #F0F0F0;display:flex;align-items:center;justify-content:space-between}
+.card-hdr h4{font-size:14.5px;font-weight:600}
+.card-body{padding:20px}
+/* STATS */
+.stats-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:22px}
+.stat-card{background:#fff;border-radius:var(--radio);padding:16px 18px;box-shadow:var(--sombra);border-left:4px solid}
+.stat-card.blue{border-left-color:#1565C0}.stat-card.green{border-left-color:#2E7D32}
+.stat-card.amber{border-left-color:#F57F17}.stat-card.red{border-left-color:#C62828}
+.s-lbl{font-size:11px;color:#78909C;font-weight:600;text-transform:uppercase;letter-spacing:.5px}
+.s-val{font-size:28px;font-weight:700;color:#1a1a2e;margin-top:3px}
+.s-sub{font-size:11px;color:#78909C;margin-top:1px}
+/* TABLE */
+.tbl-wrap{overflow-x:auto}
+table{width:100%;border-collapse:collapse}
+th{background:#F5F5F5;font-size:11.5px;font-weight:700;color:#546E7A;text-transform:uppercase;letter-spacing:.4px;padding:10px 13px;text-align:left;border-bottom:2px solid #E0E0E0}
+td{padding:12px 13px;font-size:13px;border-bottom:1px solid #F0F0F0;vertical-align:middle}
+tr:hover td{background:#FAFAFA}
+/* BADGES */
+.badge{display:inline-block;padding:3px 10px;border-radius:20px;font-size:11px;font-weight:700}
+.b4{background:#E8F5E9;color:#2E7D32}.b3{background:#E3F2FD;color:#1565C0}
+.b2{background:#FFF8E1;color:#F57F17}.b1{background:#FFEBEE;color:#C62828}
+.b-aprob{background:#E8F5E9;color:#2E7D32}.b-obs{background:#FFF8E1;color:#F57F17}
+.b-noap{background:#FFEBEE;color:#C62828}.b-pend{background:#EDE7F6;color:#512DA8}
+.b-comp{background:#E8F5E9;color:#2E7D32}
+/* BOTONES */
+.btn{display:inline-flex;align-items:center;gap:5px;padding:8px 15px;border-radius:7px;font-size:13px;font-weight:600;cursor:pointer;border:none;transition:all .15s;font-family:inherit}
+.btn-prim{background:#003087;color:#fff}.btn-prim:hover{background:#1565C0}
+.btn-ok{background:#2E7D32;color:#fff}.btn-ok:hover{background:#388E3C}
+.btn-warn{background:#E65100;color:#fff}.btn-warn:hover{background:#BF360C}
+.btn-out{background:#fff;color:#003087;border:1.5px solid #003087}.btn-out:hover{background:#E3F2FD}
+.btn-sm{padding:5px 11px;font-size:11.5px}
+.btn:disabled{opacity:.4;cursor:not-allowed}
+/* EVAL HEADER */
+.eval-hdr{background:linear-gradient(135deg,#003087,#1565C0);border-radius:12px;padding:22px;color:#fff;margin-bottom:22px}
+.eval-hdr h3{font-size:19px;font-weight:700}
+.eval-hdr p{opacity:.75;font-size:13px;margin-top:3px}
+.eval-meta{display:grid;grid-template-columns:1fr 1fr 1fr;gap:13px;margin-top:16px}
+.eval-meta label{font-size:11px;opacity:.75;display:block;margin-bottom:3px}
+.eval-meta input,.eval-meta select{width:100%;padding:8px 11px;border-radius:7px;border:none;background:rgba(255,255,255,0.15);color:#fff;font-size:13px;font-family:inherit}
+.eval-meta input::placeholder{color:rgba(255,255,255,.55)}
+.eval-meta select option{color:#1a1a2e;background:#fff}
+/* TABS */
+.tabs{display:flex;gap:2px;padding:0 20px;border-bottom:2px solid #F0F0F0;flex-wrap:wrap}
+.tab{padding:10px 14px;font-size:13px;font-weight:600;color:#78909C;cursor:pointer;border-bottom:2px solid transparent;margin-bottom:-2px;transition:all .15s;white-space:nowrap}
+.tab:hover{color:#1565C0}.tab.active{color:#003087;border-bottom-color:#003087}
+/* INDICADOR */
+.crit-title{font-size:13.5px;font-weight:700;padding:9px 14px;border-radius:7px;margin-bottom:10px;display:flex;align-items:center;gap:7px}
+.ind-row{background:#fff;border:1px solid #E0E0E0;border-radius:8px;padding:14px;margin-bottom:9px}
+.ind-name{font-size:13px;font-weight:600;color:#1a1a2e;margin-bottom:10px}
+.ev-grid-1{display:grid;grid-template-columns:1fr;gap:10px}
+.ev-grid-3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px}
+.ev-campo{background:#F8F9FA;border-radius:7px;padding:11px}
+.ev-campo label{font-size:10.5px;font-weight:700;color:#546E7A;text-transform:uppercase;margin-bottom:6px;display:block}
+.ev-campo select,.ev-campo textarea{width:100%;padding:6px 9px;border:1px solid #CFD8DC;border-radius:6px;font-size:12px;background:#fff;font-family:inherit}
+.ev-campo textarea{resize:vertical;min-height:58px}
+.ev-campo select:disabled,.ev-campo textarea:disabled{background:#F0F0F0;color:#999;cursor:not-allowed}
+.dict-ind{display:flex;align-items:center;gap:10px;background:#F0F4F8;padding:8px 11px;border-radius:6px;margin-top:9px;flex-wrap:wrap}
+.dict-ind span{font-size:11.5px;color:#546E7A;font-weight:600}
+.dict-ind select{padding:4px 9px;border:1px solid #CFD8DC;border-radius:6px;font-size:12px;font-family:inherit}
+/* DICTAMEN */
+.dict-box{border:2px solid #003087;border-radius:12px;overflow:hidden}
+.dict-hdr{background:#003087;color:#fff;padding:14px 20px;text-align:center}
+.dict-hdr h3{font-size:17px;font-weight:700}
+.dict-body{padding:22px}
+.opcion-dict{display:flex;align-items:center;gap:11px;padding:11px 14px;border:1.5px solid #E0E0E0;border-radius:8px;margin-bottom:7px;cursor:pointer;transition:all .15s}
+.opcion-dict:hover{border-color:#1565C0}.opcion-dict.sel{border-color:#1565C0;background:#E3F2FD}
+.firma-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-top:18px}
+.firma-item{border-top:2px solid #1a1a2e;padding-top:7px;font-size:12px;color:#546E7A;line-height:1.7}
+/* REPORTES */
+.rep-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:15px;margin-bottom:22px}
+.rep-card{background:#fff;border-radius:var(--radio);padding:20px;box-shadow:var(--sombra);cursor:pointer;transition:all .2s;border:2px solid transparent}
+.rep-card:hover{border-color:#1565C0;transform:translateY(-2px)}
+.rep-icon{width:46px;height:46px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:22px;margin-bottom:12px}
+/* MODAL */
+.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,0.55);z-index:200;display:flex;align-items:flex-start;justify-content:center;padding:30px 20px;overflow-y:auto}
+.modal{background:#fff;border-radius:14px;width:100%;max-width:820px;box-shadow:0 24px 64px rgba(0,0,0,0.25)}
+.modal-hdr{padding:18px 22px;border-bottom:1px solid #F0F0F0;display:flex;align-items:center;justify-content:space-between}
+.modal-hdr h4{font-size:15px;font-weight:700}
+.modal-close{background:none;border:none;font-size:22px;cursor:pointer;color:#78909C;padding:0 4px;line-height:1}
+.modal-body{padding:22px}
+/* PROGRESS */
+.prog-bar{height:8px;background:#E0E0E0;border-radius:4px;overflow:hidden;margin-top:5px}
+.prog-fill{height:100%;border-radius:4px;transition:width .4s}
+/* ARCHIVOS */
+.upload-zone{border:2px dashed #CFD8DC;border-radius:10px;padding:22px;text-align:center;cursor:pointer;transition:all .2s;background:#FAFAFA}
+.upload-zone:hover{border-color:#1565C0;background:#E3F2FD}
+.arch-item{display:flex;align-items:center;gap:9px;padding:9px 12px;background:#F5F5F5;border-radius:7px;margin-bottom:5px}
+.arch-item span.name{flex:1;font-size:12.5px}
+/* ALERTS */
+.alert{padding:11px 14px;border-radius:8px;font-size:13px;margin-bottom:14px;display:flex;align-items:center;gap:7px}
+.al-info{background:#E3F2FD;color:#1565C0;border:1px solid #90CAF9}
+.al-ok{background:#E8F5E9;color:#2E7D32;border:1px solid #A5D6A7}
+.al-warn{background:#FFF8E1;color:#F57F17;border:1px solid #FFE082}
+.al-err{background:#FFEBEE;color:#C62828;border:1px solid #FFCDD2}
+/* MAIL SIM */
+.mail-sim{background:#F5F5F5;border:1px solid #E0E0E0;border-radius:8px;padding:14px;font-size:12px;color:#546E7A;margin-top:10px}
+.mail-sim strong{color:#1a1a2e}
+/* FORM GRID */
+.fg2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.fg3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px}
+.fg-item label{font-size:12px;font-weight:600;color:#546E7A;display:block;margin-bottom:4px}
+.fg-item input,.fg-item select{width:100%;padding:8px 11px;border:1.5px solid #CFD8DC;border-radius:7px;font-size:13px;font-family:inherit}
+.fg-item input:focus,.fg-item select:focus{outline:none;border-color:#1565C0}
+/* VISTA PREVIA */
+.preview-section{background:#F8F9FA;border:1px solid #E0E0E0;border-radius:8px;padding:14px;margin-bottom:12px}
+.preview-section h5{font-size:12px;font-weight:700;color:#003087;text-transform:uppercase;letter-spacing:.5px;margin-bottom:10px}
+.preview-row{display:flex;justify-content:space-between;align-items:flex-start;padding:5px 0;border-bottom:1px solid #EFEFEF;font-size:12.5px}
+.preview-row:last-child{border-bottom:none}
+.preview-row .ind-lbl{color:#546E7A;flex:1}
+.preview-row .ind-val{font-weight:600;text-align:right}
+canvas{max-width:100%}
+@media print{
+  .sidebar,.topbar,.btn,.no-print{display:none!important}
+  .content{margin:0!important;padding:12px!important}
+  .card{box-shadow:none!important;border:1px solid #ddd!important}
+}
+</style>
+</head>
+<body>
+
+<!-- LOGIN -->
+<div id="login-screen">
+  <div class="login-bg">
+    <div class="login-card">
+      <div id="login-view">
+        <div class="login-logo">
+          <div class="logo-badge"><span>UTN</span></div>
+          <h1>CEA – Evaluación de Carreras</h1>
+          <p>Consejo Evaluador Académico · Educación a Distancia</p>
+        </div>
+        <div id="login-error" class="error-msg" style="display:none"></div>
+        <div id="login-ok" class="ok-msg" style="display:none"></div>
+        <div class="form-group">
+          <label>DNI</label>
+          <input type="text" id="inp-dni" placeholder="Ingrese su DNI (sin puntos)" onkeypress="if(event.key==='Enter')doLogin()"/>
+        </div>
+        <div class="form-group">
+          <label>Contraseña</label>
+          <input type="password" id="inp-pass" placeholder="••••••••" onkeypress="if(event.key==='Enter')doLogin()"/>
+        </div>
+        <button class="btn-login" onclick="doLogin()">Ingresar al sistema →</button>
+        <button class="btn-recup" onclick="showRecuperar()">¿Olvidaste tu contraseña? Recuperar acceso</button>
+        <div class="demo-box">
+          <strong>Accesos de demostración:</strong><br/>
+          <strong>Admin:</strong> 20111111 / admin2026<br/>
+          <strong>Coordinador:</strong> 20222222 / coord2026<br/>
+          <strong>Evaluadores:</strong> 20333333 / cea2026 · 20444444 / cea2026 · 20555555 / cea2026
+        </div>
+      </div>
+      <div id="recup-view" style="display:none">
+        <div class="login-logo">
+          <div class="logo-badge"><span>🔑</span></div>
+          <h1>Recuperar contraseña</h1>
+          <p>Te enviaremos un enlace a tu mail registrado</p>
+        </div>
+        <div id="recup-msg" style="display:none"></div>
+        <div class="form-group">
+          <label>DNI</label>
+          <input type="text" id="rec-dni" placeholder="Ingrese su DNI"/>
+        </div>
+        <div class="form-group">
+          <label>Mail institucional</label>
+          <input type="email" id="rec-mail" placeholder="su@mail.com"/>
+        </div>
+        <button class="btn-login" onclick="doRecuperar()">Enviar enlace de recuperación</button>
+        <button class="btn-recup" onclick="showLogin()" style="margin-top:8px">← Volver al inicio de sesión</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- APP -->
+<div id="app-shell" style="display:none">
+  <div class="sidebar">
+    <div class="sb-logo">
+      <div class="sb-badge">UTN</div>
+      <h2>CEA</h2>
+      <p>Evaluación Carreras a Distancia</p>
+    </div>
+    <div class="sb-nav">
+      <div class="nav-sec">Menú principal</div>
+      <button class="nav-item" id="nav-dashboard" onclick="goto('dashboard')">🏠 Inicio</button>
+      <button class="nav-item" id="nav-carreras" onclick="goto('carreras')">📋 Carreras</button>
+      <button class="nav-item" id="nav-evaluacion" onclick="goto('evaluacion')">✏️ Evaluación</button>
+      <button class="nav-item" id="nav-reportes" onclick="goto('reportes')">📊 Reportes</button>
+      <button class="nav-item" id="nav-archivos" onclick="goto('archivos')">📁 Archivos</button>
+      <button class="nav-item" id="nav-misevaluaciones" onclick="goto('misevaluaciones')">📝 Mis Evaluaciones</button>
+      <button class="nav-item" id="nav-evaluadores" onclick="goto('evaluadores')">👥 Evaluadores</button>
+      <button class="nav-item" id="nav-admin" onclick="goto('admin')">⚙️ Administración</button>
+      <div class="nav-sec">Escala de valoración</div>
+      <div class="escala-mini">
+        <div class="escala-row"><div class="escala-dot" style="background:#FFEBEE;color:#C62828">1</div><div class="escala-txt">No cumple</div></div>
+        <div class="escala-row"><div class="escala-dot" style="background:#FFF8E1;color:#F57F17">2</div><div class="escala-txt">Cumple parcialmente</div></div>
+        <div class="escala-row"><div class="escala-dot" style="background:#E3F2FD;color:#1565C0">3</div><div class="escala-txt">Cumple satisfactoriamente</div></div>
+        <div class="escala-row"><div class="escala-dot" style="background:#E8F5E9;color:#2E7D32">4</div><div class="escala-txt">Cumple de manera destacada</div></div>
+      </div>
+    </div>
+    <div class="sb-user">
+      <div class="u-name" id="sb-nombre"></div>
+      <div id="sb-role-badge" style="margin-top:4px"></div>
+      <button class="btn-logout" onclick="doLogout()">Cerrar sesión</button>
+    </div>
+  </div>
+
+  <div class="topbar">
+    <h3 id="topbar-titulo">Inicio</h3>
+    <div class="topbar-r">
+      <span style="font-size:13px;color:#78909C" id="topbar-subtitulo">CEA – UTN · Educación a Distancia</span>
+      <div class="user-avatar" id="topbar-avatar">?</div>
+    </div>
+  </div>
+
+  <div class="content" id="main-content"></div>
+</div>
+
+<!-- MODAL GLOBAL -->
+<div id="modal-global" class="modal-overlay" style="display:none" onclick="cerrarModal(event)">
+  <div class="modal" id="modal-inner" onclick="event.stopPropagation()">
+    <div class="modal-hdr">
+      <h4 id="modal-titulo">Reporte</h4>
+      <button class="modal-close" onclick="closeModal()">✕</button>
+    </div>
+    <div class="modal-body" id="modal-cuerpo"></div>
+  </div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js"></script>
+<script>
+// ============================================================
+// BASE DE DATOS EN MEMORIA
+// ============================================================
+const CRITERIOS=[
+  {id:"req_basicos",label:"Requisitos básicos",color:"#1565C0",indicadores:[
+    {id:"ajuste_sied",nombre:"Ajuste a requerimientos del SIED"},
+    {id:"mencion_distancia",nombre:"Mención explícita de ser a distancia"},
+    {id:"resolucion_cabecera",nombre:"Resolución de Facultad Cabecera"},
+    {id:"resolucion_cd",nombre:"Resolución CD FFRR miembro"},
+  ]},
+  {id:"propuesta_ped",label:"Propuesta pedagógica",color:"#6A1B9A",indicadores:[
+    {id:"modelo_pedagogico",nombre:"Modelo pedagógico acorde a normativa SIED"},
+    {id:"carga_horaria",nombre:"Carga horaria (horas y créditos)"},
+    {id:"dist_sinc_asinc",nombre:"Distribución instancias sincrónicas/asincrónicas"},
+    {id:"rol_docente",nombre:"Rol docente acorde a opción pedagógica"},
+    {id:"tabla_simultaneidad",nombre:"Tabla de simultaneidad"},
+    {id:"proc_didactico_mat",nombre:"Procesamiento didáctico de materiales"},
+    {id:"normativa_practicas",nombre:"Normativa para prácticas supervisadas"},
+  ]},
+  {id:"equipo_academico",label:"Equipo académico",color:"#00695C",indicadores:[
+    {id:"cv_resp_esp",nombre:"CV Docente Responsable (formación específica)"},
+    {id:"cv_resp_dist",nombre:"CV Docente Responsable (formación en modalidad distancia)"},
+    {id:"cv_doc_titulos",nombre:"CV Docentes (títulos pertinentes)"},
+    {id:"cv_doc_exp",nombre:"CV Docentes (experiencia en modalidad distancia)"},
+    {id:"relacion_tutor",nombre:"Relación tutor/estudiantes definida"},
+  ]},
+  {id:"entorno_virtual",label:"Entorno Virtual (EVEA)",color:"#E65100",indicadores:[
+    {id:"acceso_evea",nombre:"Acceso al EVEA"},
+    {id:"organizacion_aula",nombre:"Organización y presentación del aula virtual"},
+    {id:"context_teorica",nombre:"Contextualización teórica de temas"},
+    {id:"mapas_estudio",nombre:"Presencia de mapas de estudio / hojas de ruta"},
+  ]},
+  {id:"materiales_did",label:"Materiales didácticos",color:"#B71C1C",indicadores:[
+    {id:"adecuacion_formato",nombre:"Adecuación formato y soporte de materiales"},
+    {id:"proc_grafico",nombre:"Procesamiento didáctico y gráfico"},
+    {id:"context_complementarios",nombre:"Contextualización de materiales complementarios"},
+    {id:"diversidad_estrategias",nombre:"Diversidad de estrategias en foros y actividades"},
+    {id:"membrete_inst",nombre:"Correcto membrete institucional"},
+    {id:"referencias_biblio",nombre:"Referencias bibliográficas adecuadas"},
+  ]},
+  {id:"poblacion_est",label:"Población estudiantil",color:"#37474F",indicadores:[
+    {id:"estimacion_pob",nombre:"Estimación adecuada de población"},
+  ]},
+];
+
+const ESCALA=[
+  {val:"1",label:"1 – No cumple",bg:"#FFEBEE",color:"#C62828",cls:"b1"},
+  {val:"2",label:"2 – Cumple parcialmente",bg:"#FFF8E1",color:"#F57F17",cls:"b2"},
+  {val:"3",label:"3 – Cumple satisfactoriamente",bg:"#E3F2FD",color:"#1565C0",cls:"b3"},
+  {val:"4",label:"4 – Cumple de manera destacada",bg:"#E8F5E9",color:"#2E7D32",cls:"b4"},
+];
+
+// ROLES: administrador | coordinador | evaluador
+let USUARIOS=[
+  {id:"u1",dni:"20111111",pass:"admin2026",nombre:"Lorena",rol:"Administradora del sistema",perfil:"administrador",mail:"admin@utn.edu.ar",activo:true},
+  {id:"u2",dni:"20222222",pass:"coord2026",nombre:"Yanina",rol:"Coordinadora CEA",perfil:"coordinador",mail:"coord@utn.edu.ar",activo:true},
+  {id:"u3",dni:"20333333",pass:"cea2026",nombre:"Dario",rol:"Evaluadora",perfil:"evaluador",mail:"dario@utn.edu.ar",activo:true},
+  {id:"u4",dni:"20444444",pass:"cea2026",nombre:"Virginia",rol:"Evaluador",perfil:"evaluador",mail:"virginia@utn.edu.ar",activo:true},
+  {id:"u5",dni:"20555555",pass:"cea2026",nombre:"Sarmiento, Mariana P.",rol:"Evaluadora",perfil:"evaluador",mail:"smariana@utn.edu.ar",activo:true},
+];
+
+// LOG DE MAILS SIMULADOS
+let MAIL_LOG=[];
+
+function simularMail(para,asunto,cuerpo){
+  const m={id:Date.now(),fecha:new Date().toLocaleString("es-AR"),para,asunto,cuerpo};
+  MAIL_LOG.push(m);
+  console.log("📧 MAIL SIMULADO →",para,"|",asunto);
+  return m;
+}
+
+function buildEmpty(){
+  let ev={};
+  CRITERIOS.forEach(c=>c.indicadores.forEach(i=>{
+    // e1,e2,e3 = valoración de cada evaluador; c1,c2,c3 = comentario; dictamen = solo coordinador
+    ev[i.id]={e1:"",e2:"",e3:"",c1:"",c2:"",c3:"",dictamen:""};
+  }));
+  return ev;
+}
+
+const EVAL_DEMO=(function(){
+  const v={
+    ajuste_sied:{e1:"4",e2:"3",e3:"3",c1:"Cumple de manera destacada acorde los requerimientos del SIED.",c2:"La presentación cumple satisfactoriamente con los requisitos formales.",c3:"La presentación cumple satisfactoriamente con los requisitos formales establecidos."},
+    mencion_distancia:{e1:"4",e2:"3",e3:"3",c1:"",c2:"",c3:"Se constata el cumplimiento de los requerimientos del SIED."},
+    resolucion_cabecera:{e1:"4",e2:"3",e3:"3",c1:"",c2:"",c3:""},
+    resolucion_cd:{e1:"4",e2:"3",e3:"3",c1:"",c2:"",c3:""},
+    modelo_pedagogico:{e1:"3",e2:"2",e3:"2",c1:"En algunos ítems se cumple satisfactoriamente aunque no es explícita completamente.",c2:"El modelo pedagógico es actualizado pero la presentación de materiales se alinea parcialmente.",c3:""},
+    carga_horaria:{e1:"4",e2:"3",e3:"2",c1:"",c2:"",c3:"Aunque se mencionan conceptos de enseñanza centrada en el estudiante, no se observan evidencias sistemáticas."},
+    dist_sinc_asinc:{e1:"1",e2:"1",e3:"1",c1:"",c2:"",c3:""},
+    rol_docente:{e1:"4",e2:"3",e3:"3",c1:"",c2:"",c3:""},
+    tabla_simultaneidad:{e1:"3",e2:"3",e3:"3",c1:"",c2:"",c3:""},
+    proc_didactico_mat:{e1:"3",e2:"2",e3:"1",c1:"",c2:"",c3:""},
+    normativa_practicas:{e1:"4",e2:"",e3:"1",c1:"",c2:"",c3:""},
+    cv_resp_esp:{e1:"3",e2:"3",e3:"3",c1:"El equipo académico acorde los CVs no parece tener trayectoria suficiente.",c2:"No se observa formación docente en la modalidad a distancia.",c3:""},
+    cv_resp_dist:{e1:"1",e2:"1",e3:"1",c1:"",c2:"",c3:"No se presentan con claridad los antecedentes en educación a distancia."},
+    cv_doc_titulos:{e1:"3",e2:"3",e3:"2",c1:"",c2:"",c3:"Si bien se hace referencia a propuestas formativas en curso, no se incluye un cronograma."},
+    cv_doc_exp:{e1:"2",e2:"1",e3:"1",c1:"",c2:"",c3:""},
+    relacion_tutor:{e1:"4",e2:"3",e3:"2",c1:"",c2:"",c3:""},
+    acceso_evea:{e1:"4",e2:"4",e3:"3",c1:"Las aulas virtuales están diseñadas de manera semejante.",c2:"La carrera presenta una adecuada organización de las aulas.",c3:""},
+    organizacion_aula:{e1:"3",e2:"3",e3:"3",c1:"",c2:"",c3:""},
+    context_teorica:{e1:"3",e2:"2",e3:"2",c1:"",c2:"",c3:"El soporte se articula a través de la herramienta 'Libro' sin aprovechar la multimedialidad."},
+    mapas_estudio:{e1:"4",e2:"2",e3:"2",c1:"",c2:"",c3:""},
+    adecuacion_formato:{e1:"3",e2:"2",e3:"2",c1:"En las aulas virtuales se ve evidencia del material didáctico.",c2:"El soporte utiliza la herramienta libro; el material es fundamentalmente textual.",c3:""},
+    proc_grafico:{e1:"2",e2:"2",e3:"1",c1:"",c2:"",c3:""},
+    context_complementarios:{e1:"2",e2:"1",e3:"1",c1:"",c2:"",c3:""},
+    diversidad_estrategias:{e1:"4",e2:"1",e3:"1",c1:"",c2:"",c3:""},
+    membrete_inst:{e1:"1",e2:"3",e3:"2",c1:"",c2:"",c3:""},
+    referencias_biblio:{e1:"3",e2:"2",e3:"1",c1:"",c2:"",c3:""},
+    estimacion_pob:{e1:"3",e2:"",e3:"2",c1:"La población esperada es adecuada.",c2:"",c3:"No se presenta un estudio contextual que fundamente la estimación."},
+  };
+  let ev={};
+  CRITERIOS.forEach(c=>c.indicadores.forEach(i=>{
+    ev[i.id]={...(v[i.id]||{e1:"",e2:"",e3:"",c1:"",c2:"",c3:""}),dictamen:""};
+  }));
+  return ev;
+})();
+
+// CARRERAS
+// evaluadoresIds: array de 3 IDs de usuario
+// evaluacionesCompletadas: {uid: bool} indica si ese evaluador ya terminó
+// periodoCiclo: año/periodo de evaluación
+let CARRERAS=[
+  {
+    id:1,
+    nombre:"Tecnicatura Universitaria en Gestión del Talento Humano",
+    facultad:"Fac. Regional Buenos Aires",
+    fecha:"2024-11-15",
+    periodo:"2024",
+    estado:"aprobado_observaciones",
+    evaluadoresIds:["u3","u4","u5"],
+    evaluacionesCompletadas:{u3:true,u4:true,u5:true},
+    evaluaciones:EVAL_DEMO,
+    archivos:[
+      {nombre:"DC_TalentoHumano_v3.pdf",tipo:"pdf",fecha:"12/11/2024"},
+      {nombre:"CVs_Equipo_Docente.pdf",tipo:"pdf",fecha:"12/11/2024"}
+    ],
+    dictamen:"APROBADO CON OBSERVACIONES",
+    fundamentacion:"La carrera cumple con los requisitos formales básicos del SIED. Se identifican áreas de mejora en la propuesta pedagógica, materiales didácticos y formación del equipo docente en modalidad a distancia.",
+    recomendaciones:"1. Redefinir la distribución de instancias sincrónicas y asincrónicas.\n2. Mejorar el procesamiento didáctico de materiales.\n3. Acreditar formación del equipo docente en educación a distancia.\n4. Incorporar membrete institucional en todos los materiales.",
+  },
+  {
+    id:2,
+    nombre:"Tecnicatura en Diseño Gráfico Digital",
+    facultad:"Fac. Regional Córdoba",
+    fecha:"2025-03-20",
+    periodo:"2025",
+    estado:"pendiente",
+    evaluadoresIds:["u3","u4","u5"],
+    evaluacionesCompletadas:{u3:false,u4:false,u5:false},
+    evaluaciones:buildEmpty(),
+    archivos:[],
+    dictamen:"",fundamentacion:"",recomendaciones:"",
+  },
+  {
+    id:3,
+    nombre:"Ingeniería en Sistemas de Información",
+    facultad:"Fac. Regional Mendoza",
+    fecha:"2025-05-10",
+    periodo:"2025",
+    estado:"pendiente",
+    evaluadoresIds:["u3","u5"],
+    evaluacionesCompletadas:{u3:false,u5:false},
+    evaluaciones:buildEmpty(),
+    archivos:[],
+    dictamen:"",fundamentacion:"",recomendaciones:"",
+  },
+];
+
+// ============================================================
+// ESTADO
+// ============================================================
+let usuarioActual=null;
+let paginaActual="dashboard";
+let carreraEvalId=1;
+let tabEval="req_basicos";
+let chartInst=null;
+let carreraChartId=null;
+
+// ============================================================
+// LOGIN / AUTH
+// ============================================================
+function showLogin(){
+  document.getElementById("login-view").style.display="block";
+  document.getElementById("recup-view").style.display="none";
+}
+function showRecuperar(){
+  document.getElementById("login-view").style.display="none";
+  document.getElementById("recup-view").style.display="block";
+}
+function doRecuperar(){
+  const dni=document.getElementById("rec-dni").value.trim();
+  const mail=document.getElementById("rec-mail").value.trim();
+  const u=USUARIOS.find(x=>x.dni===dni&&x.mail===mail);
+  const el=document.getElementById("recup-msg");
+  if(!u){
+    el.className="error-msg";el.textContent="No se encontró un usuario con ese DNI y mail.";el.style.display="block";return;
+  }
+  simularMail(u.mail,"CEA-UTN: Recuperación de contraseña",
+    `Estimado/a ${u.nombre},\n\nRecibimos una solicitud de recuperación de contraseña.\nSu contraseña actual es: ${u.pass}\n\nPor seguridad, le recomendamos cambiarla al ingresar.\n\nCEA – UTN`
+  );
+  el.className="ok-msg";
+  el.innerHTML=`✅ Se envió un enlace de recuperación a <strong>${mail}</strong>.<br><small style="color:#546E7A">[SIMULACIÓN: mail registrado en consola]</small>`;
+  el.style.display="block";
+}
+
+function doLogin(){
+  const dni=document.getElementById("inp-dni").value.trim();
+  const pass=document.getElementById("inp-pass").value;
+  const found=USUARIOS.find(x=>x.dni===dni&&x.pass===pass&&x.activo);
+  if(!found){
+    const err=document.getElementById("login-error");
+    err.textContent="DNI o contraseña incorrectos.";err.style.display="block";return;
+  }
+  usuarioActual=found;
+  document.getElementById("login-screen").style.display="none";
+  document.getElementById("app-shell").style.display="flex";
+  document.getElementById("sb-nombre").textContent=found.nombre;
+
+  const roleColors={administrador:"#C62828",coordinador:"#1565C0",evaluador:"#2E7D32"};
+  const roleLabels={administrador:"Administrador",coordinador:"Coordinador",evaluador:"Evaluador"};
+  document.getElementById("sb-role-badge").innerHTML=
+    `<span class="role-badge-sb" style="background:${roleColors[found.perfil]}22;color:${roleColors[found.perfil]};border:1px solid ${roleColors[found.perfil]}44">${roleLabels[found.perfil]}</span>`;
+
+  document.getElementById("topbar-avatar").textContent=found.nombre[0];
+  aplicarPermisosSidebar();
+
+  // Página inicial según rol
+  if(found.perfil==="evaluador") goto("carreras");
+  else goto("dashboard");
+}
+
+function doLogout(){
+  usuarioActual=null;
+  document.getElementById("login-screen").style.display="block";
+  document.getElementById("app-shell").style.display="none";
+  document.getElementById("inp-dni").value="";
+  document.getElementById("inp-pass").value="";
+  document.getElementById("login-error").style.display="none";
+  showLogin();
+}
+
+function aplicarPermisosSidebar(){
+  const p=usuarioActual.perfil;
+  // administrador: todo visible
+  // coordinador: sin evaluadores, sin admin, sin misevaluaciones; con evaluacion (solo lectura)
+  // evaluador: solo carreras, archivos, misevaluaciones; sin evaluacion en menú (accede desde carreras)
+  const vis={
+    dashboard: p!=="evaluador",
+    carreras: true,
+    evaluacion: p==="administrador"||p==="coordinador",
+    reportes: p!=="evaluador",
+    archivos: true,
+    misevaluaciones: p==="evaluador",
+    evaluadores: p==="administrador",
+    admin: p==="administrador",
+  };
+  Object.entries(vis).forEach(([id,show])=>{
+    const el=document.getElementById("nav-"+id);
+    if(el) el.style.display=show?"flex":"none";
+  });
+}
+
+// ============================================================
+// NAVEGACIÓN
+// ============================================================
+const TITULOS={dashboard:"Inicio",carreras:"Carreras",evaluacion:"Evaluación de Carreras",reportes:"Reportes y Análisis",archivos:"Gestión de Archivos",evaluadores:"Gestión de Evaluadores",admin:"Administración",misevaluaciones:"Mis Evaluaciones"};
+
+function goto(pag){
+  // Validar permisos
+  if(!puedeAcceder(pag)){
+    alert("No tiene permisos para acceder a esta sección.");return;
+  }
+  paginaActual=pag;
+  document.querySelectorAll(".nav-item").forEach(n=>n.classList.remove("active"));
+  const el=document.getElementById("nav-"+pag);
+  if(el)el.classList.add("active");
+  document.getElementById("topbar-titulo").textContent=TITULOS[pag]||pag;
+  if(chartInst){chartInst.destroy();chartInst=null;}
+  renderPagina();
+}
+
+function puedeAcceder(pag){
+  const p=usuarioActual?.perfil;
+  if(!p)return false;
+  if(p==="administrador")return true;
+  if(p==="coordinador") return pag!=="admin"&&pag!=="evaluadores"&&pag!=="misevaluaciones";
+  if(p==="evaluador") return ["carreras","archivos","misevaluaciones","evaluacion"].includes(pag);
+  return false;
+}
+
+function renderPagina(){
+  const c=document.getElementById("main-content");
+  switch(paginaActual){
+    case"dashboard":c.innerHTML=htmlDashboard();initChartDashboard();break;
+    case"carreras":c.innerHTML=htmlCarreras();break;
+    case"evaluacion":c.innerHTML=htmlEvaluacion();break;
+    case"reportes":c.innerHTML=htmlReportes();break;
+    case"archivos":c.innerHTML=htmlArchivos();setTimeout(renderArchivos,50);break;
+    case"evaluadores":c.innerHTML=htmlEvaluadores();break;
+    case"misevaluaciones":c.innerHTML=htmlMisEvaluaciones();break;
+    case"admin":c.innerHTML=htmlAdmin();break;
+  }
+}
+
+// ============================================================
+// UTILS
+// ============================================================
+function fmtFecha(iso){
+  if(!iso)return"–";
+  const p=iso.split("-");
+  if(p.length!==3)return iso;
+  const [y,m,d]=p;
+  return`${d}/${m}/${y}`;
+}
+
+function escalaOpts(selVal="",disabled=false){
+  const d=disabled?" disabled":"";
+  return `<option value="">-- Seleccionar --</option>`+ESCALA.map(e=>`<option value="${e.val}"${selVal===e.val?" selected":""}>${e.label}</option>`).join("");
+}
+
+function badgeEscala(v){
+  const m={1:"b1",2:"b2",3:"b3",4:"b4"};
+  const l={1:"1-No cumple",2:"2-Cumple parc.",3:"3-Cumple satisf.",4:"4-Cumple dest."};
+  if(!v||v==="")return"<span style='color:#90A4AE'>–</span>";
+  return`<span class="badge ${m[v]||""}">${l[v]||v}</span>`;
+}
+
+function badgeEstado(e){
+  const m={aprobado:"b-aprob",aprobado_observaciones:"b-obs",no_aprobado:"b-noap",pendiente:"b-pend"};
+  const l={aprobado:"Aprobado",aprobado_observaciones:"Aprobado c/obs.",no_aprobado:"No aprobado",pendiente:"Pendiente"};
+  return`<span class="badge ${m[e]||"b-pend"}">${l[e]||"Pendiente"}</span>`;
+}
+
+function calcProm(ev){
+  let all=[];
+  CRITERIOS.forEach(c=>c.indicadores.forEach(i=>{
+    const r=ev[i.id];if(!r)return;
+    if(r.e1)all.push(+r.e1);if(r.e2)all.push(+r.e2);if(r.e3)all.push(+r.e3);
+  }));
+  if(!all.length)return"–";
+  return(all.reduce((a,b)=>a+b,0)/all.length).toFixed(2);
+}
+
+function calcPromCrit(ev,cid){
+  const c=CRITERIOS.find(x=>x.id===cid);if(!c)return 0;
+  let all=[];
+  c.indicadores.forEach(i=>{
+    const r=ev[i.id];if(!r)return;
+    if(r.e1)all.push(+r.e1);if(r.e2)all.push(+r.e2);if(r.e3)all.push(+r.e3);
+  });
+  if(!all.length)return 0;
+  return+(all.reduce((a,b)=>a+b,0)/all.length).toFixed(2);
+}
+
+function calcProgreso(ev){
+  const total=CRITERIOS.reduce((a,c)=>a+c.indicadores.length,0)*3;
+  let llenos=0;
+  CRITERIOS.forEach(c=>c.indicadores.forEach(i=>{
+    const r=ev[i.id];if(!r)return;
+    if(r.e1)llenos++;if(r.e2)llenos++;if(r.e3)llenos++;
+  }));
+  return Math.round((llenos/total)*100);
+}
+
+function calcProgresoEvaluador(ev,evIdx){
+  // evIdx: 1,2,3
+  const campo="e"+evIdx;
+  const total=CRITERIOS.reduce((a,c)=>a+c.indicadores.length,0);
+  let llenos=0;
+  CRITERIOS.forEach(c=>c.indicadores.forEach(i=>{
+    const r=ev[i.id];if(!r)return;
+    if(r[campo])llenos++;
+  }));
+  return Math.round((llenos/total)*100);
+}
+
+function promColor(v){
+  const n=parseFloat(v);
+  if(isNaN(n)||v==="–")return"#78909C";
+  if(n>=3)return"#2E7D32";if(n>=2)return"#F57F17";return"#C62828";
+}
+
+// Obtener índice (1,2,3) del usuario actual dentro de la carrera
+function getEvalIdx(carrera){
+  if(!carrera||!usuarioActual)return 0;
+  const idx=carrera.evaluadoresIds.indexOf(usuarioActual.id);
+  return idx>=0?idx+1:0;
+}
+
+function getUsuario(id){return USUARIOS.find(u=>u.id===id)||null;}
+
+// ============================================================
+// DASHBOARD (solo admin y coordinador)
+// ============================================================
+function htmlDashboard(){
+  const pend=CARRERAS.filter(c=>c.estado==="pendiente").length;
+  const aprob=CARRERAS.filter(c=>c.estado==="aprobado").length;
+  const obs=CARRERAS.filter(c=>c.estado==="aprobado_observaciones").length;
+  const noap=CARRERAS.filter(c=>c.estado==="no_aprobado").length;
+  const rows=CARRERAS.map(c=>{
+    const pr=calcProm(c.evaluaciones);
+    return`<tr>
+      <td style="font-weight:600;max-width:220px">${c.nombre}</td>
+      <td style="font-size:12px;color:#546E7A">${c.facultad}</td>
+      <td style="font-size:12px;color:#546E7A">${c.periodo}</td>
+      <td>${badgeEstado(c.estado)}</td>
+      <td style="font-weight:700;color:${promColor(pr)}">${pr}</td>
+    </tr>`;
+  }).join("");
+  return`
+  <div style="margin-bottom:22px">
+    <h2 style="font-size:21px;font-weight:700;color:#003087">Panel de control – CEA UTN</h2>
+    <p style="color:#78909C;margin-top:3px">Bienvenido/a, ${usuarioActual.nombre} · ${usuarioActual.rol}</p>
+  </div>
+  <div class="stats-grid">
+    <div class="stat-card blue"><div class="s-lbl">Total carreras</div><div class="s-val">${CARRERAS.length}</div><div class="s-sub">Registradas en el sistema</div></div>
+    <div class="stat-card amber"><div class="s-lbl">Pendientes</div><div class="s-val">${pend}</div><div class="s-sub">Requieren evaluación</div></div>
+    <div class="stat-card green"><div class="s-lbl">Aprobadas</div><div class="s-val">${aprob+obs}</div><div class="s-sub">${obs} con observaciones</div></div>
+    <div class="stat-card red"><div class="s-lbl">No aprobadas</div><div class="s-val">${noap}</div><div class="s-sub">Con dictamen negativo</div></div>
+  </div>
+  <div style="display:grid;grid-template-columns:3fr 2fr;gap:18px">
+    <div class="card">
+      <div class="card-hdr"><h4>Carreras registradas</h4><button class="btn btn-sm btn-prim" onclick="goto('carreras')">Ver todas</button></div>
+      <div class="tbl-wrap"><table><thead><tr><th>Carrera</th><th>Facultad</th><th>Período</th><th>Estado</th><th>Promedio</th></tr></thead><tbody>${rows}</tbody></table></div>
+    </div>
+    <div class="card">
+      <div class="card-hdr"><h4>Promedio por criterio</h4>
+        <select id="sel-chart-carrera" onchange="cambiarCarreraChart(this.value)" style="padding:6px 10px;border:1.5px solid #CFD8DC;border-radius:7px;font-size:13px;font-family:inherit;max-width:220px">
+          ${CARRERAS.map((c,i)=>`<option value="${c.id}"${(c.id===carreraChartId)?" selected":""}>${c.nombre}</option>`).join("")}
+        </select>
+      </div>
+      <div class="card-body"><canvas id="chart-dash" height="240"></canvas></div>
+    </div>
+  </div>
+  <div class="card" style="margin-top:18px">
+    <div class="card-hdr"><h4>Escala de valoración CEA</h4></div>
+    <div class="card-body" style="display:grid;grid-template-columns:repeat(4,1fr);gap:12px">
+      ${ESCALA.map(e=>`<div style="background:${e.bg};border-radius:9px;padding:13px 15px;border-left:4px solid ${e.color}"><div style="font-size:24px;font-weight:800;color:${e.color}">${e.val}</div><div style="font-size:13px;font-weight:600;color:${e.color};margin-top:3px">${e.label.split("–")[1].trim()}</div></div>`).join("")}
+    </div>
+  </div>`;
+}
+
+function initChartDashboard(){
+  setTimeout(()=>{
+    const el=document.getElementById("chart-dash");if(!el)return;
+    if(chartInst)chartInst.destroy();
+    if(!carreraChartId||!CARRERAS.find(c=>c.id===carreraChartId)){
+      carreraChartId=CARRERAS[0]?.id;
+    }
+    const carrera=CARRERAS.find(c=>c.id===carreraChartId)||CARRERAS[0];
+    chartInst=new Chart(el,{
+      type:"bar",
+      data:{
+        labels:CRITERIOS.map(c=>c.label.split(" ").slice(0,3).join(" ")),
+        datasets:[{label:"Promedio",data:CRITERIOS.map(c=>calcPromCrit(carrera.evaluaciones,c.id)),backgroundColor:CRITERIOS.map(c=>c.color+"bb"),borderColor:CRITERIOS.map(c=>c.color),borderWidth:1,borderRadius:5}]
+      },
+      options:{responsive:true,plugins:{legend:{display:false}},scales:{y:{min:0,max:4,ticks:{stepSize:1}}}}
+    });
+  },100);
+}
+
+function cambiarCarreraChart(id){
+  carreraChartId=+id;
+  if(chartInst){chartInst.destroy();chartInst=null;}
+  initChartDashboard();
+}
+
+// ============================================================
+// CARRERAS
+// ============================================================
+function htmlCarreras(){
+  const esAdmin=usuarioActual.perfil==="administrador";
+  const esCoord=usuarioActual.perfil==="coordinador";
+  const esEval=usuarioActual.perfil==="evaluador";
+
+  const rows=CARRERAS.map(c=>{
+    const pr=calcProm(c.evaluaciones);
+    const prog=calcProgreso(c.evaluaciones);
+    const esMiCarrera=c.evaluadoresIds.includes(usuarioActual.id);
+    const evalIdx=getEvalIdx(c);
+    const yaCompletada=evalIdx>0&&c.evaluacionesCompletadas[usuarioActual.id]===true;
+
+    let accionBtn="";
+    if(esAdmin){
+      accionBtn=`<div style="display:flex;gap:6px;flex-wrap:wrap">
+        <button class="btn btn-sm btn-prim" onclick="abrirEvalAdmin(${c.id})">👁</button>
+        <button class="btn btn-sm btn-prim" onclick="abrirModalCarrera(${c.id})">✏️</button>
+      </div>`;
+    } else if(esCoord){
+      // coordinador: solo lectura, no puede evaluar
+      accionBtn=`<button class="btn btn-sm btn-prim" onclick="abrirEvalAdmin(${c.id})">👁 Ver</button>`;
+    } else if(esEval){
+      if(!esMiCarrera){
+        accionBtn=`<button class="btn btn-sm" disabled style="background:#E0E0E0;color:#999;cursor:not-allowed">Sin asignación</button>`;
+      } else if(yaCompletada){
+        accionBtn=`<span class="badge b-comp">✓ Evaluación completada</span>`;
+      } else {
+        accionBtn=`<button class="btn btn-sm btn-prim" onclick="abrirEval(${c.id})">✏️ Evaluar</button>`;
+      }
+    }
+
+    // Evaluadores asignados
+    const evNames=c.evaluadoresIds.map(id=>{const u=getUsuario(id);return u?u.nombre.split(",")[0]:"?"}).join(", ");
+
+    return`<tr${esEval&&!esMiCarrera?" style='opacity:.55;background:#fafafa'":""}>
+      <td style="font-weight:600;max-width:200px">${c.nombre}</td>
+      <td style="font-size:12px;color:#546E7A">${c.facultad}</td>
+      <td style="font-size:12px;color:#546E7A">${c.periodo}</td>
+      <td>${badgeEstado(c.estado)}</td>
+      <td style="font-size:11.5px;color:#546E7A;max-width:160px">${evNames}</td>
+      <td style="font-weight:700;color:${promColor(pr)}">${pr}</td>
+      <td style="min-width:110px">
+        <div style="font-size:10.5px;color:#78909C;margin-bottom:3px">${prog}%</div>
+        <div class="prog-bar"><div class="prog-fill" style="width:${prog}%;background:${prog>=80?"#2E7D32":prog>=40?"#F57F17":"#90A4AE"}"></div></div>
+      </td>
+      <td>${accionBtn}</td>
+    </tr>`;
+  }).join("");
+
+  const btnNueva=(esAdmin)?`<button class="btn btn-prim" onclick="showNuevaCarrera()">+ Nueva carrera</button>`:"";
+
+  return`
+  <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:20px">
+    <div>
+      <h2 style="font-size:21px;font-weight:700;color:#003087">Carreras registradas</h2>
+      <p style="color:#78909C;margin-top:2px">
+        ${esEval?"Solo podés evaluar las carreras donde estás asignado/a":"Gestión y evaluación de carreras a distancia UTN"}
+      </p>
+    </div>
+    ${btnNueva}
+  </div>
+
+  <div id="form-nueva-carrera" style="display:none">
+    <div class="card" style="margin-bottom:18px">
+      <div class="card-hdr"><h4>Registrar nueva carrera</h4></div>
+      <div class="card-body">
+        <div class="fg2" style="margin-bottom:12px">
+          <div class="fg-item"><label>Nombre de la carrera</label><input id="new-nombre" placeholder="Nombre completo..."/></div>
+          <div class="fg-item"><label>Facultad Regional</label><input id="new-facultad" placeholder="Fac. Regional..."/></div>
+        </div>
+        <div class="fg3" style="margin-bottom:14px">
+          <div class="fg-item"><label>Fecha inicio evaluación</label><input type="date" id="new-fecha" value="${new Date().toISOString().slice(0,10)}"/></div>
+          <div class="fg-item"><label>Período / Ciclo</label><input id="new-periodo" placeholder="2025" value="${new Date().getFullYear()}"/></div>
+        </div>
+        <div style="margin-bottom:14px">
+          <label style="font-size:12px;font-weight:600;color:#546E7A;display:block;margin-bottom:6px">Asignar evaluadores (seleccionar exactamente 3)</label>
+          <div id="eval-check-list" style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px">
+            ${USUARIOS.filter(u=>u.perfil==="evaluador"&&u.activo).map(u=>`
+              <label style="display:flex;align-items:center;gap:8px;padding:8px 11px;border:1.5px solid #E0E0E0;border-radius:7px;cursor:pointer;font-size:13px;transition:border-color .15s" onmouseover="this.style.borderColor='#1565C0'" onmouseout="this.style.borderColor=document.getElementById('ev_'+u.id)?.checked?'#1565C0':'#E0E0E0'">
+                <input type="checkbox" id="ev_${u.id}" value="${u.id}" onchange="validarEvalSel()"/>
+                <span>${u.nombre}<br/><span style="font-size:11px;color:#78909C">${u.mail}</span></span>
+              </label>`).join("")}
+          </div>
+          <div id="eval-sel-msg" style="margin-top:6px;font-size:12px;color:#F57F17"></div>
+        </div>
+        <div style="display:flex;gap:8px">
+          <button class="btn btn-prim" onclick="crearCarrera()">Guardar carrera</button>
+          <button class="btn btn-out" onclick="document.getElementById('form-nueva-carrera').style.display='none'">Cancelar</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="tbl-wrap">
+      <table><thead><tr><th>Carrera</th><th>Facultad</th><th>Período</th><th>Estado</th><th>Evaluadores</th><th>Promedio</th><th>Progreso</th><th>Acción</th></tr></thead>
+      <tbody>${rows}</tbody></table>
+    </div>
+  </div>`;
+}
+
+function validarEvalSel(){
+  const checks=document.querySelectorAll('#eval-check-list input:checked');
+  const msg=document.getElementById("eval-sel-msg");
+  if(checks.length>3){
+    // desmarcar el último
+    event.target.checked=false;
+    msg.textContent="Solo se pueden seleccionar 3 evaluadores.";
+    return;
+  }
+  msg.textContent=checks.length===3?"✅ 3 evaluadores seleccionados":`${checks.length}/3 evaluadores seleccionados`;
+}
+
+function showNuevaCarrera(){
+  document.getElementById("form-nueva-carrera").style.display="block";
+}
+
+function crearCarrera(){
+  const n=document.getElementById("new-nombre").value.trim();
+  const f=document.getElementById("new-facultad").value.trim();
+  const fe=document.getElementById("new-fecha").value;
+  const per=document.getElementById("new-periodo").value.trim();
+  if(!n||!f){alert("Complete nombre y facultad.");return;}
+
+  const selEvals=Array.from(document.querySelectorAll('#eval-check-list input:checked')).map(c=>c.value);
+  if(selEvals.length!==3){alert("Debe seleccionar exactamente 3 evaluadores.");return;}
+
+  const evalCompletadas={};
+  selEvals.forEach(id=>evalCompletadas[id]=false);
+
+  const nuevaCarrera={
+    id:Date.now(),nombre:n,facultad:f,fecha:fe,periodo:per,
+    estado:"pendiente",
+    evaluadoresIds:selEvals,
+    evaluacionesCompletadas:evalCompletadas,
+    evaluaciones:buildEmpty(),
+    archivos:[],dictamen:"",fundamentacion:"",recomendaciones:""
+  };
+  CARRERAS.push(nuevaCarrera);
+
+  // Notificar evaluadores
+  selEvals.forEach(uid=>{
+    const u=getUsuario(uid);
+    if(u){
+      simularMail(u.mail,
+        "CEA-UTN: Nueva carrera asignada para evaluación",
+        `Estimado/a ${u.nombre},\n\nSe le ha asignado como evaluador/a de la carrera:\n"${n}" (${f})\nPeríodo: ${per}\nFecha de inicio: ${fe}\n\nPuede ingresar al sistema CEA-UTN con su DNI para completar la evaluación.\n\nSaludos,\nCEA – UTN`
+      );
+    }
+  });
+
+  document.getElementById("form-nueva-carrera").style.display="none";
+  goto("carreras");
+}
+
+function abrirModalCarrera(cid){
+  const c=CARRERAS.find(x=>x.id===cid);
+  if(!c)return;
+  document.getElementById("modal-titulo").textContent="✏️ Editar carrera: "+c.nombre;
+  document.getElementById("modal-cuerpo").innerHTML=htmlModalCarrera(c);
+  document.getElementById("modal-global").style.display="flex";
+}
+
+function htmlModalCarrera(c){
+  const asignados=c.evaluadoresIds.map(id=>getUsuario(id)).filter(Boolean);
+  const disponibles=USUARIOS.filter(u=>u.perfil==="evaluador"&&u.activo&&!c.evaluadoresIds.includes(u.id));
+  const estados=[["pendiente","Pendiente"],["aprobado","Aprobado"],["aprobado_observaciones","Aprobado c/obs."],["no_aprobado","No aprobado"]];
+  return`
+  <div class="fg2" style="margin-bottom:12px">
+    <div class="fg-item"><label>Nombre de la carrera</label><input id="cm-nombre" value="${c.nombre}"/></div>
+    <div class="fg-item"><label>Facultad Regional</label><input id="cm-facultad" value="${c.facultad}"/></div>
+  </div>
+  <div class="fg3" style="margin-bottom:12px">
+    <div class="fg-item"><label>Fecha</label><input type="date" id="cm-fecha" value="${c.fecha}"/></div>
+    <div class="fg-item"><label>Período / Ciclo</label><input id="cm-periodo" value="${c.periodo}"/></div>
+    <div class="fg-item"><label>Estado</label>
+      <select id="cm-estado">${estados.map(([v,l])=>`<option value="${v}"${c.estado===v?" selected":""}>${l}</option>`).join("")}</select>
+    </div>
+  </div>
+  <div style="margin-bottom:8px">
+    <button class="btn btn-prim btn-sm" onclick="guardarCarreraEdit(${c.id})">💾 Guardar cambios</button>
+  </div>
+
+  <h5 style="margin:18px 0 8px">Evaluadores asignados</h5>
+  <div class="tbl-wrap" style="margin-bottom:14px">
+    <table><thead><tr><th>Nombre</th><th>Mail</th><th></th></tr></thead>
+    <tbody>${asignados.length?asignados.map(u=>`<tr>
+      <td style="font-size:13px">${u.nombre}</td>
+      <td style="font-size:12px;color:#546E7A">${u.mail}</td>
+      <td><button class="btn btn-sm btn-out" style="color:#C62828;border-color:#C62828" onclick="quitarEvaluadorCarrera(${c.id},'${u.id}')">✖ Eliminar</button></td>
+    </tr>`).join(""):`<tr><td colspan="3" style="text-align:center;color:#90A4AE">Sin evaluadores asignados</td></tr>`}</tbody></table>
+  </div>
+  <h5 style="margin-bottom:8px">Agregar evaluador</h5>
+  <div style="display:flex;gap:8px">
+    <select id="sel-agregar-evaluador" style="flex:1;padding:9px 13px;border:1.5px solid #CFD8DC;border-radius:8px;font-size:13px;font-family:inherit">
+      ${disponibles.length?disponibles.map(u=>`<option value="${u.id}">${u.nombre} (${u.mail})</option>`).join(""):`<option value="">No hay evaluadores disponibles</option>`}
+    </select>
+    <button class="btn btn-sm btn-prim" ${disponibles.length?"":"disabled"} onclick="agregarEvaluadorCarrera(${c.id})">+ Agregar</button>
+  </div>`;
+}
+
+function guardarCarreraEdit(cid){
+  const c=CARRERAS.find(x=>x.id===cid);
+  if(!c)return;
+  const nombre=document.getElementById("cm-nombre").value.trim();
+  const facultad=document.getElementById("cm-facultad").value.trim();
+  const fecha=document.getElementById("cm-fecha").value;
+  const periodo=document.getElementById("cm-periodo").value.trim();
+  const estado=document.getElementById("cm-estado").value;
+  if(!nombre||!facultad){alert("Complete nombre y facultad.");return;}
+  c.nombre=nombre;c.facultad=facultad;c.fecha=fecha;c.periodo=periodo;c.estado=estado;
+  closeModal();
+  goto("carreras");
+  alert("✅ Carrera actualizada correctamente.");
+}
+
+function quitarEvaluadorCarrera(cid,uid){
+  const c=CARRERAS.find(x=>x.id===cid);
+  if(!c)return;
+  if(c.evaluadoresIds.length<=1){
+    if(!confirm("Esta es la última/única evaluación asignada. ¿Desea eliminarla igual?"))return;
+  }
+  c.evaluadoresIds=c.evaluadoresIds.filter(id=>id!==uid);
+  delete c.evaluacionesCompletadas[uid];
+  goto("carreras");
+  abrirModalCarrera(cid);
+}
+
+function agregarEvaluadorCarrera(cid){
+  const sel=document.getElementById("sel-agregar-evaluador");
+  if(!sel||!sel.value)return;
+  const c=CARRERAS.find(x=>x.id===cid);
+  if(!c)return;
+  const u=getUsuario(sel.value);
+  if(!u)return;
+  if(!c.evaluadoresIds.includes(u.id)){
+    c.evaluadoresIds.push(u.id);
+    c.evaluacionesCompletadas[u.id]=false;
+    simularMail(u.mail,
+      "CEA-UTN: Nueva carrera asignada para evaluación",
+      `Estimado/a ${u.nombre},\n\nSe le ha asignado como evaluador/a de la carrera:\n"${c.nombre}" (${c.facultad})\nPeríodo: ${c.periodo}\n\nPuede ingresar al sistema CEA-UTN con su DNI para completar la evaluación.\n\nSaludos,\nCEA – UTN`
+    );
+  }
+  goto("carreras");
+  abrirModalCarrera(cid);
+}
+
+function abrirEval(id){
+  // Solo evaluadores
+  const c=CARRERAS.find(x=>x.id===id);
+  if(!c)return;
+  const idx=getEvalIdx(c);
+  if(idx===0){alert("No está asignado/a a esta carrera.");return;}
+  if(c.evaluacionesCompletadas[usuarioActual.id]){alert("Ya completó la evaluación de esta carrera.");return;}
+  carreraEvalId=id;
+  tabEval="req_basicos";
+  goto("evaluacion");
+}
+
+function abrirEvalAdmin(id){
+  carreraEvalId=id;
+  tabEval="req_basicos";
+  goto("evaluacion");
+}
+
+function getBotonesAccion(c){
+  const esEval=usuarioActual.perfil==="evaluador";
+  const evalIdx=getEvalIdx(c);
+  const yaCompleto=esEval&&c.evaluacionesCompletadas[usuarioActual.id];
+  return esEval?`
+    <button class="btn btn-ok" onclick="guardarParcial()" ${yaCompleto?"disabled":""} title="Guarda el progreso sin finalizar">💾 Guardar evaluación</button>
+    <button class="btn btn-warn" onclick="terminarEvaluacion()" ${yaCompleto?"disabled":""}>✅ Terminar evaluación</button>
+  `:tabEval==="dictamen"?`
+    <button class="btn btn-ok" onclick="guardarCoord()">💾 Guardar dictamen final</button>
+  `:usuarioActual.perfil==="coordinador"?`
+    <span style="background:#E3F2FD;color:#1565C0;border:1px solid #90CAF9;padding:7px 14px;border-radius:7px;font-size:12.5px">👁 Solo lectura – Coordinador</span>
+  `:"";
+}
+
+// ============================================================
+// EVALUACIÓN
+// ============================================================
+function htmlEvaluacion(){
+  const c=CARRERAS.find(x=>x.id===carreraEvalId)||CARRERAS[0];
+  const esEval=usuarioActual.perfil==="evaluador";
+  const evalIdx=getEvalIdx(c); // 1,2,3 o 0 si no es evaluador
+  const yaCompleto=esEval&&c.evaluacionesCompletadas[usuarioActual.id];
+
+  const optsCarreras=CARRERAS.map(x=>`<option value="${x.id}"${x.id===carreraEvalId?" selected":""}>${x.nombre}</option>`).join("");
+
+  // Nombres evaluadores de la carrera
+  const evNombres=c.evaluadoresIds.map((id,i)=>{
+    const u=getUsuario(id);
+    return`<div><label>Evaluador/a ${i+1}</label><input value="${u?u.nombre:"–"}" readonly/></div>`;
+  }).join("");
+
+  const botonesAccion=getBotonesAccion(c);
+
+  return`
+  <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:20px">
+    <div>
+      <h2 style="font-size:21px;font-weight:700;color:#003087">Plantilla de Evaluación</h2>
+      <p style="color:#78909C;margin-top:2px">Consejo Evaluador Académico – CEA UTN</p>
+    </div>
+    <div style="display:flex;gap:8px;align-items:center" id="acciones-eval">
+      <span id="msg-guardado" style="display:none;background:#E8F5E9;color:#2E7D32;border:1px solid #A5D6A7;padding:7px 13px;border-radius:7px;font-size:12.5px">✓ Guardado exitosamente</span>
+      ${botonesAccion}
+    </div>
+  </div>
+
+  ${yaCompleto?`<div class="alert al-ok">✅ Ya completaste tu evaluación de esta carrera. Solo visualización.</div>`:""}
+  ${esEval&&evalIdx===0?`<div class="alert al-warn">⚠️ No estás asignado/a como evaluador en esta carrera.</div>`:""}
+
+  <div class="eval-hdr">
+    <h3>📋 Plantilla de Evaluación de Carreras a Distancia</h3>
+    <p>${esEval?`Completando como: Evaluador/a ${evalIdx} – ${usuarioActual.nombre}`:"Vista del coordinador/administrador – todos los campos visibles"}</p>
+    <div class="eval-meta">
+      <div><label>Carrera a evaluar</label>
+        ${(usuarioActual.perfil!=="evaluador")?`<select onchange="cambiarCarrera(this.value)">${optsCarreras}</select>`:`<input value="${c.nombre}" readonly/>`}
+      </div>
+      <div><label>Facultad Regional cabecera</label><input value="${c.facultad}" readonly/></div>
+      <div><label>Período / Fecha</label><input value="${c.periodo} · ${fmtFecha(c.fecha)}" readonly/></div>
+    </div>
+    <div class="eval-meta" style="margin-top:11px">
+      ${evNombres}
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="tabs" id="tabs-eval">
+      ${CRITERIOS.map(cr=>`<div class="tab${tabEval===cr.id?" active":""}" onclick="cambiarTab('${cr.id}')">${cr.label}</div>`).join("")}
+      ${!esEval?`<div class="tab${tabEval==="dictamen"?" active":""}" onclick="cambiarTab('dictamen')">🏛 Dictamen Final</div>`:""}
+    </div>
+    <div class="card-body" id="tab-contenido">
+      ${renderTabContenido(c)}
+    </div>
+  </div>
+
+  <div style="display:flex;justify-content:flex-end;gap:10px;margin-top:4px">
+    ${botonesAccion}
+  </div>`;
+}
+
+function renderTabContenido(c){
+  if(tabEval==="dictamen")return renderDictamenTab(c);
+  const crit=CRITERIOS.find(x=>x.id===tabEval);
+  if(!crit)return"";
+
+  const esEval=usuarioActual.perfil==="evaluador";
+  const evalIdx=getEvalIdx(c); // 1,2,3
+  const prom=calcPromCrit(c.evaluaciones,crit.id);
+  const yaCompleto=esEval&&c.evaluacionesCompletadas[usuarioActual.id];
+
+  const inds=crit.indicadores.map(ind=>{
+    const r=c.evaluaciones[ind.id]||{e1:"",e2:"",e3:"",c1:"",c2:"",c3:"",dictamen:""};
+
+    let camposHtml="";
+
+    if(esEval){
+      // Solo ve y edita SU columna
+      const ev="e"+evalIdx;
+      const com="c"+evalIdx;
+      const dis=yaCompleto?" disabled":"";
+      camposHtml=`<div class="ev-grid-1">
+        <div class="ev-campo">
+          <label>Mi valoración – Evaluador/a ${evalIdx}</label>
+          <select id="${ind.id}_${ev}"${dis} onchange="updateInd('${c.id}','${ind.id}','${ev}',this.value)" style="margin-bottom:7px">${escalaOpts(r[ev])}</select>
+          ${r[ev]?`<div style="margin-bottom:5px">${badgeEscala(r[ev])}</div>`:""}
+          <textarea id="${ind.id}_${com}"${dis} placeholder="Mis comentarios..." rows="3" onchange="updateInd('${c.id}','${ind.id}','${com}',this.value)">${r[com]||""}</textarea>
+        </div>
+      </div>`;
+    } else {
+      // Admin: ve y edita las 3 columnas (acceso total) / Coordinador: solo lectura
+      const soloLectura=usuarioActual.perfil==="coordinador";
+      const dis=soloLectura?" disabled":"";
+      const evCampos=["e1","e2","e3"].map((ev,idx)=>{
+        const uid=c.evaluadoresIds[idx];
+        const u=getUsuario(uid);
+        const nombre=u?u.nombre.split(",")[0]:"Evaluador "+(idx+1);
+        return`<div class="ev-campo">
+          <label>Evaluador/a ${idx+1} – ${nombre}</label>
+          <select id="${ind.id}_${ev}"${dis} onchange="updateInd('${c.id}','${ind.id}','${ev}',this.value)" style="margin-bottom:7px">${escalaOpts(r[ev])}</select>
+          <textarea id="${ind.id}_c${idx+1}"${dis} rows="3" onchange="updateInd('${c.id}','${ind.id}','c${idx+1}',this.value)">${r["c"+(idx+1)]||""}</textarea>
+        </div>`;
+      }).join("");
+      camposHtml=`<div class="ev-grid-3">${evCampos}</div>`;
+    }
+
+    return`<div class="ind-row">
+      <div class="ind-name">🔹 ${ind.nombre}</div>
+      ${camposHtml}
+    </div>`;
+  }).join("");
+
+  return`
+  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px">
+    <div class="crit-title" style="background:${crit.color}18;color:${crit.color}">📌 ${crit.label}</div>
+    <div style="font-size:13px;color:#546E7A">Promedio criterio: <strong style="color:${crit.color};font-size:15px">${prom||"–"}</strong></div>
+  </div>
+  ${inds}`;
+}
+
+function renderDictamenTab(c){
+  const pr=calcProm(c.evaluaciones);
+  const soloLectura=usuarioActual.perfil==="evaluador";
+  const opciones=["APROBADO SIN OBSERVACIONES","APROBADO CON OBSERVACIONES","NO APROBADO"].map(op=>`
+    <div class="opcion-dict${c.dictamen===op?" sel":""}" ${!soloLectura?`onclick="selDictamen('${c.id}','${op}',this)"`:'style="cursor:default"'}>
+      <input type="radio" name="dict_opt" ${c.dictamen===op?"checked":""} ${soloLectura?"disabled":""}/><label style="${soloLectura?"cursor:default":""}">${op}</label>
+    </div>`).join("");
+
+  const textareaAttr=soloLectura?" readonly":"";
+  return`
+  <div class="al-info alert" style="margin-bottom:18px">Promedio general de la carrera: <strong>${pr}</strong> / 4.00</div>
+  <div class="dict-box">
+    <div class="dict-hdr"><h3>DICTAMEN FINAL</h3><p style="opacity:.8;font-size:12.5px;margin-top:3px">${c.nombre} · ${c.facultad}</p></div>
+    <div class="dict-body">
+      <div style="margin-bottom:18px"><div style="font-weight:700;font-size:14px;margin-bottom:9px">Valoración del dictamen:</div>${opciones}</div>
+      <div style="margin-bottom:18px">
+        <div style="font-weight:700;font-size:14px;margin-bottom:7px">Fundamentación del dictamen:</div>
+        <textarea id="dict-fund" rows="5"${textareaAttr} style="width:100%;padding:11px;border:1.5px solid #CFD8DC;border-radius:8px;font-size:13px;font-family:inherit;resize:vertical" placeholder="Desarrollar la fundamentación..." onchange="updateCarreraField(${c.id},'fundamentacion',this.value)">${c.fundamentacion||""}</textarea>
+      </div>
+      <div style="margin-bottom:18px">
+        <div style="font-weight:700;font-size:14px;margin-bottom:7px">Recomendaciones para mejora:</div>
+        <textarea id="dict-recom" rows="4"${textareaAttr} style="width:100%;padding:11px;border:1.5px solid #CFD8DC;border-radius:8px;font-size:13px;font-family:inherit;resize:vertical" placeholder="Detallar las recomendaciones..." onchange="updateCarreraField(${c.id},'recomendaciones',this.value)">${c.recomendaciones||""}</textarea>
+      </div>
+      <div class="firma-grid">
+        ${c.evaluadoresIds.map((id,i)=>{const u=getUsuario(id);return`<div class="firma-item">Evaluador/a ${i+1}: ${u?u.nombre:"–"}<br/><span style="font-size:11px">Fecha: ${fmtFecha(c.fecha)}</span></div>`;}).join("")}
+        <div class="firma-item">Coordinador/a: ___________________________<br/><span style="font-size:11px">Fecha: ___________________</span></div>
+      </div>
+    </div>
+  </div>`;
+}
+
+function cambiarCarrera(id){
+  carreraEvalId=+id;tabEval="req_basicos";
+  document.getElementById("main-content").innerHTML=htmlEvaluacion();
+}
+
+function cambiarTab(id){
+  tabEval=id;
+  document.querySelectorAll(".tabs .tab").forEach(t=>t.classList.remove("active"));
+  event.target.classList.add("active");
+  const c=CARRERAS.find(x=>x.id===carreraEvalId);
+  document.getElementById("tab-contenido").innerHTML=renderTabContenido(c);
+  const acc=document.getElementById("acciones-eval");
+  if(acc){
+    acc.innerHTML=`<span id="msg-guardado" style="display:none;background:#E8F5E9;color:#2E7D32;border:1px solid #A5D6A7;padding:7px 13px;border-radius:7px;font-size:12.5px">✓ Guardado exitosamente</span>${getBotonesAccion(c)}`;
+  }
+}
+
+function updateInd(cid,iid,campo,val){
+  const c=CARRERAS.find(x=>x.id==cid);
+  if(!c)return;
+  if(!c.evaluaciones[iid])c.evaluaciones[iid]={e1:"",e2:"",e3:"",c1:"",c2:"",c3:"",dictamen:""};
+  c.evaluaciones[iid][campo]=val;
+}
+
+function updateCarreraField(cid,campo,val){
+  const c=CARRERAS.find(x=>x.id==cid);if(c)c[campo]=val;
+}
+
+function selDictamen(cid,op,el){
+  const c=CARRERAS.find(x=>x.id==cid);if(!c)return;
+  c.dictamen=op;
+  document.querySelectorAll(".opcion-dict").forEach(d=>d.classList.remove("sel"));
+  el.classList.add("sel");
+  el.querySelector("input").checked=true;
+  let estado="pendiente";
+  if(op==="APROBADO SIN OBSERVACIONES")estado="aprobado";
+  else if(op==="APROBADO CON OBSERVACIONES")estado="aprobado_observaciones";
+  else if(op==="NO APROBADO")estado="no_aprobado";
+  c.estado=estado;
+}
+
+function guardarParcial(){
+  // Guarda sin finalizar
+  const msg=document.getElementById("msg-guardado");
+  if(msg){msg.textContent="✓ Progreso guardado";msg.style.display="inline";setTimeout(()=>msg.style.display="none",3000);}
+}
+
+function guardarCoord(){
+  const fund=document.getElementById("dict-fund");
+  const recom=document.getElementById("dict-recom");
+  const c=CARRERAS.find(x=>x.id===carreraEvalId);
+  if(c){if(fund)c.fundamentacion=fund.value;if(recom)c.recomendaciones=recom.value;}
+  const msg=document.getElementById("msg-guardado");
+  if(msg){msg.textContent="✓ Dictámenes guardados";msg.style.display="inline";setTimeout(()=>msg.style.display="none",3000);}
+}
+
+function terminarEvaluacion(){
+  const c=CARRERAS.find(x=>x.id===carreraEvalId);
+  if(!c||!usuarioActual)return;
+  const evalIdx=getEvalIdx(c);
+  if(evalIdx===0){alert("No está asignado/a a esta carrera.");return;}
+
+  // Verificar que completó todos los campos
+  const ev="e"+evalIdx;
+  let sin=0;
+  CRITERIOS.forEach(cr=>cr.indicadores.forEach(i=>{
+    const r=c.evaluaciones[i.id];
+    if(!r||!r[ev])sin++;
+  }));
+  if(sin>0){
+    if(!confirm(`Tiene ${sin} indicadores sin valorar. ¿Desea finalizar igualmente?`))return;
+  }
+
+  // Mostrar vista previa antes de confirmar
+  const modal=document.getElementById("modal-global");
+  document.getElementById("modal-titulo").textContent="✅ Vista previa – Terminar evaluación";
+  document.getElementById("modal-cuerpo").innerHTML=htmlVistaPrevia(c,evalIdx);
+  modal.style.display="flex";
+}
+
+function htmlVistaPrevia(c,evalIdx){
+  const ev="e"+evalIdx;
+  const com="c"+evalIdx;
+  const secciones=CRITERIOS.map(crit=>{
+    const filas=crit.indicadores.map(ind=>{
+      const r=c.evaluaciones[ind.id]||{};
+      return`<div class="preview-row">
+        <span class="ind-lbl">${ind.nombre}</span>
+        <span class="ind-val">${badgeEscala(r[ev])}</span>
+      </div>`;
+    }).join("");
+    const prom=calcPromCrit(c.evaluaciones,crit.id);
+    return`<div class="preview-section">
+      <h5 style="color:${crit.color}">📌 ${crit.label} — Promedio: ${prom}</h5>
+      ${filas}
+    </div>`;
+  }).join("");
+
+  return`
+  <div class="al-warn alert">⚠️ Una vez confirmado, no podrá modificar su evaluación. Se notificará al coordinador.</div>
+  <h4 style="margin-bottom:14px;font-size:15px">${c.nombre}</h4>
+  ${secciones}
+  <div style="margin-top:20px;display:flex;justify-content:flex-end;gap:10px">
+    <button class="btn btn-out" onclick="closeModal()">← Volver y revisar</button>
+    <button class="btn btn-ok" onclick="confirmarTerminar(${c.id})">✅ Confirmar y enviar evaluación</button>
+  </div>`;
+}
+
+function confirmarTerminar(cid){
+  const c=CARRERAS.find(x=>x.id==cid);
+  if(!c)return;
+  const evalIdx=getEvalIdx(c);
+
+  // Marcar como completada
+  c.evaluacionesCompletadas[usuarioActual.id]=true;
+
+  // Actualizar estado carrera si los 3 completaron
+  const todosCompletos=c.evaluadoresIds.every(id=>c.evaluacionesCompletadas[id]===true);
+  if(todosCompletos)c.estado="aprobado_observaciones"; // queda para dictamen coordinador
+
+  // Enviar mail al coordinador
+  const coordinadores=USUARIOS.filter(u=>u.perfil==="coordinador"||u.perfil==="administrador");
+  coordinadores.forEach(coord=>{
+    simularMail(coord.mail,
+      `CEA-UTN: ${usuarioActual.nombre} completó la evaluación`,
+      `Estimado/a ${coord.nombre},\n\nEl/la evaluador/a ${usuarioActual.nombre} ha completado su evaluación de la carrera:\n"${c.nombre}" (${c.facultad})\n\nPuede ingresar al sistema para revisar y completar el dictamen.\n\nCEA – UTN`
+    );
+  });
+
+  closeModal();
+  // Recargar página de carreras
+  goto("carreras");
+
+  // Mostrar confirmación
+  setTimeout(()=>{
+    alert(`✅ Evaluación enviada correctamente.\n\nSe notificó al coordinador por mail.\n\n[SIMULACIÓN: mail enviado – ver consola]`);
+  },300);
+}
+
+// ============================================================
+// REPORTES
+// ============================================================
+function htmlReportes(){
+  const optsC=CARRERAS.map(c=>`<option value="${c.id}">${c.nombre} (${c.periodo})</option>`).join("");
+  const esCoord=usuarioActual.perfil==="coordinador";
+  return`
+  <div style="margin-bottom:22px">
+    <h2 style="font-size:21px;font-weight:700;color:#003087">Reportes y análisis</h2>
+    <p style="color:#78909C;margin-top:2px">Generación de informes y documentos del proceso evaluativo</p>
+  </div>
+  <div class="card" style="margin-bottom:18px">
+    <div class="card-body">
+      <label style="font-size:13px;font-weight:600;color:#546E7A;display:block;margin-bottom:7px">Seleccionar carrera:</label>
+      <select id="rep-carrera-sel" style="padding:9px 13px;border:1.5px solid #CFD8DC;border-radius:8px;font-size:14px;min-width:380px;font-family:inherit">${optsC}</select>
+    </div>
+  </div>
+  <div class="rep-grid">
+    <div class="rep-card" onclick="abrirReporte('dictamen')">
+      <div class="rep-icon" style="background:#E3F2FD;color:#1565C0">🏛</div>
+      <h5>Dictamen Final</h5><p>Documento oficial con fundamentación, recomendaciones y firmas.</p>
+      <div style="margin-top:11px"><button class="btn btn-sm" style="background:#E3F2FD;color:#1565C0;border:none">Generar →</button></div>
+    </div>
+    <div class="rep-card" onclick="abrirReporte('radar')">
+      <div class="rep-icon" style="background:#EDE7F6;color:#6A1B9A">📡</div>
+      <h5>Gráfico Radial por Criterio</h5><p>Análisis visual comparativo de los tres evaluadores por criterio.</p>
+      <div style="margin-top:11px"><button class="btn btn-sm" style="background:#EDE7F6;color:#6A1B9A;border:none">Generar →</button></div>
+    </div>
+    <div class="rep-card" onclick="abrirReporte('cuadro')">
+      <div class="rep-icon" style="background:#E0F2F1;color:#00695C">📊</div>
+      <h5>Cuadro comparativo de indicadores</h5><p>Tabla detallada con valoraciones de los tres evaluadores por indicador.</p>
+      <div style="margin-top:11px"><button class="btn btn-sm" style="background:#E0F2F1;color:#00695C;border:none">Generar →</button></div>
+    </div>
+    <div class="rep-card" onclick="abrirReporte('resumen')">
+      <div class="rep-icon" style="background:#FBE9E7;color:#E65100">📋</div>
+      <h5>Resumen ejecutivo</h5><p>Síntesis general con promedios por criterio, alertas y estado del dictamen.</p>
+      <div style="margin-top:11px"><button class="btn btn-sm" style="background:#FBE9E7;color:#E65100;border:none">Generar →</button></div>
+    </div>
+    ${esCoord?"":`<div class="rep-card" onclick="abrirReporte('mails')">
+      <div class="rep-icon" style="background:#E8F5E9;color:#2E7D32">📧</div>
+      <h5>Log de notificaciones</h5><p>Historial de mails enviados automáticamente por el sistema.</p>
+      <div style="margin-top:11px"><button class="btn btn-sm" style="background:#E8F5E9;color:#2E7D32;border:none">Ver log →</button></div>
+    </div>`}
+  </div>`;
+}
+
+function getCarreraRep(){
+  const sel=document.getElementById("rep-carrera-sel");
+  if(!sel)return CARRERAS[0];
+  return CARRERAS.find(c=>c.id==sel.value)||CARRERAS[0];
+}
+
+function abrirReporte(tipo){
+  const c=getCarreraRep();
+  const modal=document.getElementById("modal-global");
+  switch(tipo){
+    case"dictamen":document.getElementById("modal-titulo").textContent="🏛 Dictamen Final";document.getElementById("modal-cuerpo").innerHTML=htmlRptDictamen(c);break;
+    case"radar":document.getElementById("modal-titulo").textContent="📡 Gráfico Radial";document.getElementById("modal-cuerpo").innerHTML=htmlRptRadar(c);setTimeout(()=>initChartRadar(c),120);break;
+    case"cuadro":document.getElementById("modal-titulo").textContent="📊 Cuadro de indicadores";document.getElementById("modal-cuerpo").innerHTML=htmlRptCuadro(c);break;
+    case"resumen":document.getElementById("modal-titulo").textContent="📋 Resumen ejecutivo";document.getElementById("modal-cuerpo").innerHTML=htmlRptResumen(c);break;
+    case"mails":
+      if(usuarioActual.perfil==="coordinador"){alert("No tiene permisos para ver el log de notificaciones.");return;}
+      document.getElementById("modal-titulo").textContent="📧 Log de notificaciones";document.getElementById("modal-cuerpo").innerHTML=htmlRptMails();break;
+  }
+  modal.style.display="flex";
+}
+
+function htmlRptDictamen(c){
+  const opciones=["APROBADO SIN OBSERVACIONES","APROBADO CON OBSERVACIONES","NO APROBADO"].map(op=>`
+    <div class="opcion-dict${c.dictamen===op?" sel":""}" style="cursor:default">
+      <input type="radio" ${c.dictamen===op?"checked":""} disabled/><label style="cursor:default;font-weight:${c.dictamen===op?700:400}">${op}</label>
+    </div>`).join("");
+  const pr=calcProm(c.evaluaciones);
+  return`
+  <div class="dict-box">
+    <div class="dict-hdr"><h3>DICTAMEN FINAL</h3><p style="opacity:.8;font-size:12.5px;margin-top:3px">Consejo Evaluador Académico – CEA UTN</p></div>
+    <div class="dict-body">
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:11px;background:#F5F5F5;padding:14px;border-radius:8px;margin-bottom:16px;font-size:13px">
+        <div><span style="color:#78909C">Carrera:</span><br/><strong>${c.nombre}</strong></div>
+        <div><span style="color:#78909C">Facultad:</span><br/><strong>${c.facultad}</strong></div>
+        <div><span style="color:#78909C">Período:</span><br/><strong>${c.periodo}</strong></div>
+        <div><span style="color:#78909C">Promedio general:</span><br/><strong style="font-size:20px;color:#1565C0">${pr}</strong></div>
+      </div>
+      <div style="margin-bottom:16px"><div style="font-weight:700;font-size:14px;margin-bottom:8px">DICTAMEN FINAL:</div>${opciones}</div>
+      ${c.fundamentacion?`<div style="margin-bottom:16px"><div style="font-weight:700;font-size:14px;margin-bottom:7px">Fundamentación:</div><div style="background:#F8F9FA;padding:13px;border-radius:8px;font-size:13px;line-height:1.6;white-space:pre-line">${c.fundamentacion}</div></div>`:""}
+      ${c.recomendaciones?`<div style="margin-bottom:18px"><div style="font-weight:700;font-size:14px;margin-bottom:7px">Recomendaciones:</div><div style="background:#F8F9FA;padding:13px;border-radius:8px;font-size:13px;line-height:1.6;white-space:pre-line">${c.recomendaciones}</div></div>`:""}
+      <div class="firma-grid">
+        ${c.evaluadoresIds.map((id,i)=>{const u=getUsuario(id);return`<div class="firma-item">Evaluador/a ${i+1}: ${u?u.nombre:"–"}<br/><span style="font-size:11px">Fecha: ${fmtFecha(c.fecha)}</span></div>`;}).join("")}
+        <div class="firma-item">Coordinador/a: ___________________________<br/><span style="font-size:11px">Fecha: ___________________</span></div>
+      </div>
+    </div>
+  </div>
+  <div style="margin-top:14px;display:flex;justify-content:flex-end;gap:8px" class="no-print">
+    <button class="btn btn-prim" onclick="window.print()">🖨 Imprimir dictamen</button>
+  </div>`;
+}
+
+function htmlRptRadar(c){
+  const tabla=CRITERIOS.map(cr=>{
+    const v=[1,2,3].map(n=>{let vals=[];cr.indicadores.forEach(i=>{const r=c.evaluaciones[i.id];if(r&&r["e"+n])vals.push(+r["e"+n])});return vals.length?(vals.reduce((a,b)=>a+b,0)/vals.length).toFixed(2):"–"});
+    const num=v.map(x=>parseFloat(x)||0);const tot=num.filter(x=>x>0);
+    const g=tot.length?(tot.reduce((a,b)=>a+b,0)/tot.length).toFixed(2):"–";
+    return`<tr><td style="font-weight:600">${cr.label}</td>${v.map(x=>`<td style="text-align:center;font-weight:700;color:${promColor(x)}">${x}</td>`).join("")}<td style="text-align:center;font-weight:700;background:#F5F5F5;color:${promColor(g)}">${g}</td></tr>`;
+  }).join("");
+  return`<canvas id="chart-radar" style="max-height:350px;margin-bottom:18px"></canvas>
+  <div class="tbl-wrap"><table><thead><tr><th>Criterio</th><th style="text-align:center">E1</th><th style="text-align:center">E2</th><th style="text-align:center">E3</th><th style="text-align:center">Promedio</th></tr></thead><tbody>${tabla}</tbody></table></div>`;
+}
+
+function initChartRadar(c){
+  const el=document.getElementById("chart-radar");if(!el)return;
+  const colors=["#1565C0","#2E7D32","#C62828"];
+  const ds=["e1","e2","e3"].map((ev,i)=>({
+    label:"Evaluador "+(i+1),
+    data:CRITERIOS.map(cr=>{let v=[];cr.indicadores.forEach(ind=>{const r=c.evaluaciones[ind.id];if(r&&r[ev])v.push(+r[ev])});return v.length?(v.reduce((a,b)=>a+b,0)/v.length):0;}),
+    backgroundColor:colors[i]+"22",borderColor:colors[i],borderWidth:2,pointRadius:4
+  }));
+  if(chartInst)chartInst.destroy();
+  chartInst=new Chart(el,{type:"radar",data:{labels:CRITERIOS.map(c=>c.label),datasets:ds},options:{responsive:true,scales:{r:{min:0,max:4,ticks:{stepSize:1},grid:{color:"rgba(0,0,0,0.08)"},angleLines:{color:"rgba(0,0,0,0.08)"}}},plugins:{legend:{position:"bottom"}}}});
+}
+
+function htmlRptCuadro(c){
+  const filas=CRITERIOS.map(cr=>{
+    const hdr=`<tr><td colspan="4" style="background:${cr.color}18;font-weight:700;color:${cr.color};padding:8px 13px">${cr.label}</td></tr>`;
+    const inds=cr.indicadores.map(i=>{
+      const r=c.evaluaciones[i.id]||{};
+      return`<tr><td style="padding-left:18px;font-size:12.5px">${i.nombre}</td>${["e1","e2","e3"].map(ev=>`<td style="text-align:center">${badgeEscala(r[ev])}</td>`).join("")}</tr>`;
+    }).join("");
+    return hdr+inds;
+  }).join("");
+  return`<div class="tbl-wrap"><table><thead><tr><th style="width:40%">Criterio / Indicador</th><th style="text-align:center">Eval.1</th><th style="text-align:center">Eval.2</th><th style="text-align:center">Eval.3</th></tr></thead><tbody>${filas}</tbody></table></div>`;
+}
+
+function htmlRptResumen(c){
+  const pr=calcProm(c.evaluaciones);
+  let ind3=0,ind1=0;
+  CRITERIOS.forEach(cr=>cr.indicadores.forEach(i=>{const r=c.evaluaciones[i.id];if(!r)return;const vals=[r.e1,r.e2,r.e3].filter(v=>v).map(Number);if(vals.length&&(vals.reduce((a,b)=>a+b,0)/vals.length)>=3)ind3++;if(vals.some(v=>v===1))ind1++;}));
+  const barras=CRITERIOS.map(cr=>{const p=calcPromCrit(c.evaluaciones,cr.id);const pct=Math.round((p/4)*100);return`
+    <div style="margin-bottom:11px">
+      <div style="display:flex;justify-content:space-between;margin-bottom:3px">
+        <span style="font-size:13px;font-weight:600;color:${cr.color}">${cr.label}</span>
+        <span style="font-weight:700;color:${promColor(p)}">${p||"–"} / 4</span>
+      </div>
+      <div class="prog-bar" style="height:11px"><div class="prog-fill" style="width:${pct}%;background:${cr.color}"></div></div>
+    </div>`;}).join("");
+  const dictBadge=c.dictamen?`<span class="badge ${c.dictamen.includes("SIN")?"b4":c.dictamen.includes("CON")?"b3":"b1"}" style="font-size:14px;padding:6px 16px">${c.dictamen}</span>`:`<span class="badge b-pend" style="font-size:13px;padding:5px 14px">Sin dictamen emitido</span>`;
+  
+  // Progreso por evaluador
+  const progEvals=c.evaluadoresIds.map((id,i)=>{
+    const u=getUsuario(id);
+    const prog=calcProgresoEvaluador(c.evaluaciones,i+1);
+    const comp=c.evaluacionesCompletadas[id];
+    return`<div style="display:flex;align-items:center;gap:10px;margin-bottom:8px">
+      <span style="font-size:12px;min-width:160px">${u?u.nombre.split(",")[0]:"Eval."+(i+1)}</span>
+      <div style="flex:1"><div class="prog-bar" style="height:8px"><div class="prog-fill" style="width:${prog}%;background:${comp?"#2E7D32":"#1565C0"}"></div></div></div>
+      <span style="font-size:11px;min-width:80px;text-align:right">${comp?'<span class="badge b4" style="font-size:10px">Completada</span>':`${prog}%`}</span>
+    </div>`;
+  }).join("");
+
+  return`
+  <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:11px;margin-bottom:20px">
+    <div style="background:#E3F2FD;border-radius:10px;padding:15px 17px;border-left:4px solid #1565C0">
+      <div style="font-size:11.5px;color:#1565C0;font-weight:700">Promedio general</div>
+      <div style="font-size:28px;font-weight:800;color:#003087">${pr}</div>
+      <div style="font-size:11px;color:#78909C">Escala 1–4</div>
+    </div>
+    <div style="background:#E8F5E9;border-radius:10px;padding:15px 17px;border-left:4px solid #2E7D32">
+      <div style="font-size:11.5px;color:#2E7D32;font-weight:700">Indicadores ≥ 3</div>
+      <div style="font-size:28px;font-weight:800;color:#2E7D32">${ind3}</div>
+      <div style="font-size:11px;color:#78909C">Cumple satisfact./destacado</div>
+    </div>
+    <div style="background:#FFEBEE;border-radius:10px;padding:15px 17px;border-left:4px solid #C62828">
+      <div style="font-size:11.5px;color:#C62828;font-weight:700">Con "No cumple"</div>
+      <div style="font-size:28px;font-weight:800;color:#C62828">${ind1}</div>
+      <div style="font-size:11px;color:#78909C">Al menos un evaluador = 1</div>
+    </div>
+  </div>
+  <div style="margin-bottom:18px"><div style="font-weight:600;font-size:13px;margin-bottom:8px;color:#546E7A">Progreso por evaluador:</div>${progEvals}</div>
+  ${barras}
+  <div style="margin-top:18px;padding:14px;background:#F8F9FA;border-radius:9px;border:1px solid #E0E0E0">
+    <div style="font-weight:700;margin-bottom:8px">Estado del dictamen:</div>${dictBadge}
+  </div>`;
+}
+
+function htmlRptMails(){
+  if(!MAIL_LOG.length)return`<div class="alert al-info">No hay notificaciones enviadas todavía.</div>`;
+  const rows=MAIL_LOG.slice().reverse().map(m=>`
+    <tr>
+      <td style="font-size:11.5px;color:#546E7A;white-space:nowrap">${m.fecha}</td>
+      <td style="font-size:12px">${m.para}</td>
+      <td style="font-size:12.5px;font-weight:600">${m.asunto}</td>
+      <td><button class="btn btn-sm btn-out" onclick="verMail(${m.id})">Ver</button></td>
+    </tr>`).join("");
+  return`<div class="tbl-wrap"><table><thead><tr><th>Fecha</th><th>Destinatario</th><th>Asunto</th><th></th></tr></thead><tbody>${rows}</tbody></table></div>`;
+}
+
+function verMail(id){
+  const m=MAIL_LOG.find(x=>x.id===id);if(!m)return;
+  document.getElementById("modal-titulo").textContent="📧 "+m.asunto;
+  document.getElementById("modal-cuerpo").innerHTML=`
+    <div style="font-size:12px;color:#546E7A;margin-bottom:12px"><strong>Para:</strong> ${m.para} &nbsp;|&nbsp; <strong>Fecha:</strong> ${m.fecha}</div>
+    <div class="mail-sim" style="white-space:pre-line;font-size:13px;line-height:1.7">${m.cuerpo}</div>
+    <div style="margin-top:14px;display:flex;justify-content:flex-end">
+      <button class="btn btn-out" onclick="abrirReporte('mails')">← Volver al log</button>
+    </div>`;
+}
+
+// ============================================================
+// ARCHIVOS
+// ============================================================
+function htmlArchivos(){
+  const optsC=CARRERAS.map(c=>`<option value="${c.id}">${c.nombre} (${c.periodo})</option>`).join("");
+  return`
+  <div style="margin-bottom:22px">
+    <h2 style="font-size:21px;font-weight:700;color:#003087">Gestión de archivos</h2>
+    <p style="color:#78909C;margin-top:2px">Documentación adjunta por carrera evaluada</p>
+  </div>
+  <div class="card" style="margin-bottom:18px">
+    <div class="card-body">
+      <label style="font-size:13px;font-weight:600;color:#546E7A;display:block;margin-bottom:7px">Carrera:</label>
+      <select id="arch-carrera-sel" style="padding:9px 13px;border:1.5px solid #CFD8DC;border-radius:8px;font-size:14px;min-width:380px;font-family:inherit" onchange="renderArchivos()">
+        ${optsC}
+      </select>
+    </div>
+  </div>
+  <div id="arch-contenido"></div>`;
+}
+
+function renderArchivos(){
+  const sel=document.getElementById("arch-carrera-sel");
+  if(!sel)return;
+  const c=CARRERAS.find(x=>x.id==sel.value)||CARRERAS[0];
+  const soloLectura=usuarioActual.perfil==="coordinador";
+  const esEval=usuarioActual.perfil==="evaluador";
+  // Evaluador: solo ve su carrera asignada
+  const puedeEditar=!soloLectura;
+
+  const lista=(c.archivos||[]).map((a,i)=>`
+    <div class="arch-item">
+      <span style="font-size:20px">${a.tipo==="pdf"?"📄":a.tipo==="xlsx"?"📊":"📦"}</span>
+      <span class="name">${a.nombre}</span>
+      <span style="font-size:11px;color:#90A4AE">${a.fecha||""}</span>
+      ${puedeEditar?`<button style="background:none;border:none;cursor:pointer;font-size:14px;color:#E57373" onclick="eliminarArch(${c.id},${i})">✕</button>`:""}
+    </div>`).join("")||`<div style="text-align:center;padding:28px;color:#90A4AE"><div style="font-size:36px;margin-bottom:8px">📂</div><div>No hay archivos adjuntos</div></div>`;
+
+  const necesarios=["Diseño Curricular (DC)","CVs del equipo docente","Resoluciones del Consejo Directivo","Certificado acreditación SIED","Capturas del aula virtual"];
+  const checklist=necesarios.map(a=>{const ok=c.archivos?.some(f=>f.nombre.toLowerCase().includes(a.toLowerCase().split(" ")[0].toLowerCase()));return`<div style="display:flex;align-items:center;gap:8px;padding:6px 0;border-bottom:1px solid #F0F0F0;font-size:12.5px"><span style="color:${ok?"#2E7D32":"#E57373"}">${ok?"✅":"⭕"}</span>${a}</div>`;}).join("");
+
+  const zonaUpload=puedeEditar?`
+    <div class="al-info alert" style="margin-bottom:14px">Tipos aceptados: PDF, DOC, DOCX, XLS, XLSX, ZIP</div>
+    <input type="file" id="file-inp" multiple accept=".pdf,.doc,.docx,.xls,.xlsx,.zip,.jpg,.png" onchange="adjuntarArchivos(${c.id})"/>
+    <div class="upload-zone" onclick="document.getElementById('file-inp').click()">
+      <div style="font-size:36px">☁️</div>
+      <div style="font-size:14px;font-weight:600;color:#546E7A;margin-top:7px">Haga clic para seleccionar</div>
+      <p style="font-size:12.5px;color:#90A4AE;margin-top:5px">o arrastre los archivos aquí</p>
+    </div>`:`<div class="al-info alert">Solo lectura: el coordinador no puede modificar archivos.</div>`;
+
+  document.getElementById("arch-contenido").innerHTML=`
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:18px">
+    <div class="card">
+      <div class="card-hdr"><h4>📁 Archivos adjuntos (${c.archivos?.length||0})</h4></div>
+      <div class="card-body">${lista}</div>
+    </div>
+    <div class="card">
+      <div class="card-hdr"><h4>${puedeEditar?"📤 Adjuntar archivo":"📋 Documentación requerida"}</h4></div>
+      <div class="card-body">
+        ${zonaUpload}
+        <div style="margin-top:15px">
+          <div style="font-size:12px;font-weight:600;color:#546E7A;margin-bottom:7px">Documentos requeridos por el CEA:</div>
+          ${checklist}
+        </div>
+      </div>
+    </div>
+  </div>`;
+}
+
+function adjuntarArchivos(cid){
+  const inp=document.getElementById("file-inp");
+  const c=CARRERAS.find(x=>x.id==cid);
+  if(!c||!inp.files.length)return;
+  Array.from(inp.files).forEach(f=>{
+    const ext=f.name.split(".").pop().toLowerCase();
+    const tipo=ext==="pdf"?"pdf":["xls","xlsx"].includes(ext)?"xlsx":["jpg","jpeg","png"].includes(ext)?"img":"zip";
+    c.archivos.push({nombre:f.name,tipo,fecha:new Date().toLocaleDateString("es-AR")});
+  });
+  renderArchivos();
+}
+
+function eliminarArch(cid,idx){
+  const c=CARRERAS.find(x=>x.id==cid);if(!c)return;
+  c.archivos.splice(idx,1);renderArchivos();
+}
+
+// ============================================================
+// MIS EVALUACIONES (solo evaluador)
+// ============================================================
+function htmlMisEvaluaciones(){
+  const miId=usuarioActual.id;
+  // Carreras donde el usuario es evaluador
+  const misCarreras=CARRERAS.filter(c=>c.evaluadoresIds.includes(miId));
+  const completadas=misCarreras.filter(c=>c.evaluacionesCompletadas[miId]===true);
+  const pendientes=misCarreras.filter(c=>!c.evaluacionesCompletadas[miId]);
+
+  const rowsComp=completadas.map(c=>{
+    const evalIdx=getEvalIdx(c);
+    const ev="e"+evalIdx;
+    // Promedio personal
+    let vals=[];
+    CRITERIOS.forEach(cr=>cr.indicadores.forEach(i=>{const r=c.evaluaciones[i.id];if(r&&r[ev])vals.push(+r[ev]);}));
+    const prom=vals.length?(vals.reduce((a,b)=>a+b,0)/vals.length).toFixed(2):"–";
+    return`<tr>
+      <td style="font-weight:600;max-width:200px">${c.nombre}</td>
+      <td style="font-size:12px;color:#546E7A">${c.facultad}</td>
+      <td style="font-size:12px;color:#546E7A">${c.periodo}</td>
+      <td><span class="badge b-comp">✓ Completada</span></td>
+      <td style="font-weight:700;color:${promColor(prom)}">${prom}</td>
+      <td><button class="btn btn-sm btn-prim" onclick="verMiEval(${c.id})">👁 Ver</button></td>
+    </tr>`;
+  }).join("");
+
+  const rowsPend=pendientes.map(c=>{
+    const prog=calcProgresoEvaluador(c.evaluaciones,getEvalIdx(c));
+    return`<tr>
+      <td style="font-weight:600;max-width:200px">${c.nombre}</td>
+      <td style="font-size:12px;color:#546E7A">${c.facultad}</td>
+      <td style="font-size:12px;color:#546E7A">${c.periodo}</td>
+      <td><span class="badge b-pend">En curso (${prog}%)</span></td>
+      <td>–</td>
+      <td><button class="btn btn-sm btn-prim" onclick="abrirEval(${c.id})">✏️ Continuar</button></td>
+    </tr>`;
+  }).join("");
+
+  const sinAsignacion=misCarreras.length===0?`
+    <div class="alert al-info" style="margin-top:18px">No tenés carreras asignadas todavía.</div>`:"";
+
+  return`
+  <div style="margin-bottom:22px">
+    <h2 style="font-size:21px;font-weight:700;color:#003087">Mis Evaluaciones</h2>
+    <p style="color:#78909C;margin-top:2px">Historial y estado de tus evaluaciones como miembro del CEA</p>
+  </div>
+
+  <div class="stats-grid" style="grid-template-columns:repeat(3,1fr)">
+    <div class="stat-card blue"><div class="s-lbl">Carreras asignadas</div><div class="s-val">${misCarreras.length}</div><div class="s-sub">En total</div></div>
+    <div class="stat-card green"><div class="s-lbl">Completadas</div><div class="s-val">${completadas.length}</div><div class="s-sub">Evaluaciones enviadas</div></div>
+    <div class="stat-card amber"><div class="s-lbl">Pendientes</div><div class="s-val">${pendientes.length}</div><div class="s-sub">Requieren tu evaluación</div></div>
+  </div>
+
+  ${sinAsignacion}
+
+  ${completadas.length>0?`
+  <div class="card" style="margin-bottom:18px">
+    <div class="card-hdr">
+      <h4>✅ Evaluaciones completadas y enviadas</h4>
+      <span style="font-size:12px;color:#2E7D32;background:#E8F5E9;padding:4px 10px;border-radius:12px">${completadas.length} evaluación/es</span>
+    </div>
+    <div class="tbl-wrap">
+      <table><thead><tr><th>Carrera</th><th>Facultad</th><th>Período</th><th>Estado</th><th>Mi promedio</th><th>Acción</th></tr></thead>
+      <tbody>${rowsComp}</tbody></table>
+    </div>
+  </div>`:""}
+
+  ${pendientes.length>0?`
+  <div class="card">
+    <div class="card-hdr">
+      <h4>🕐 Evaluaciones pendientes</h4>
+      <span style="font-size:12px;color:#F57F17;background:#FFF8E1;padding:4px 10px;border-radius:12px">${pendientes.length} pendiente/s</span>
+    </div>
+    <div class="tbl-wrap">
+      <table><thead><tr><th>Carrera</th><th>Facultad</th><th>Período</th><th>Estado</th><th>Promedio</th><th>Acción</th></tr></thead>
+      <tbody>${rowsPend}</tbody></table>
+    </div>
+  </div>`:""}`;
+}
+
+function verMiEval(cid){
+  // Abre la evaluación en modo solo lectura (ya completada)
+  carreraEvalId=cid;
+  tabEval="req_basicos";
+  goto("evaluacion");
+}
+
+// ============================================================
+// GESTIÓN DE EVALUADORES (solo admin)
+// ============================================================
+function htmlEvaluadores(){
+  const evaluadores=USUARIOS.filter(u=>u.perfil==="evaluador");
+  const rows=evaluadores.map(u=>{
+    const carreras=CARRERAS.filter(c=>c.evaluadoresIds.includes(u.id));
+    return`<tr>
+      <td style="font-weight:600">${u.nombre}</td>
+      <td style="font-family:monospace;font-size:12px">${u.dni}</td>
+      <td style="font-size:12px">${u.mail}</td>
+      <td style="font-size:12px">${carreras.map(c=>`<span style="display:block">${c.nombre.split(" ").slice(0,4).join(" ")}… (${c.periodo})</span>`).join("")||"–"}</td>
+      <td><span class="badge ${u.activo?"b4":"b1"}">${u.activo?"Activo":"Inactivo"}</span></td>
+      <td>
+        <button class="btn btn-sm btn-prim" onclick="abrirModalEvaluador('${u.id}')">✏️ Editar</button>
+        <button class="btn btn-sm btn-out" onclick="toggleActivo('${u.id}')">${u.activo?"Desactivar":"Activar"}</button>
+      </td>
+    </tr>`;
+  }).join("");
+
+  return`
+  <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:20px">
+    <div><h2 style="font-size:21px;font-weight:700;color:#003087">Gestión de evaluadores</h2><p style="color:#78909C;margin-top:2px">Alta, baja y asignación de evaluadores CEA</p></div>
+    <button class="btn btn-prim" onclick="showAltaEvaluador()">+ Nuevo evaluador</button>
+  </div>
+
+  <div id="form-alta-eval" style="display:none">
+    <div class="card" style="margin-bottom:18px">
+      <div class="card-hdr"><h4>Alta de nuevo evaluador</h4></div>
+      <div class="card-body">
+        <div class="fg2" style="margin-bottom:12px">
+          <div class="fg-item"><label>Apellido y nombre</label><input id="ev-nombre" placeholder="Apellido, Nombre..."/></div>
+          <div class="fg-item"><label>DNI</label><input id="ev-dni" placeholder="Sin puntos ni espacios" maxlength="12"/></div>
+        </div>
+        <div class="fg2" style="margin-bottom:14px">
+          <div class="fg-item"><label>Mail institucional</label><input type="email" id="ev-mail" placeholder="nombre@utn.edu.ar"/></div>
+          <div class="fg-item"><label>Contraseña inicial</label><input id="ev-pass" placeholder="Se enviará por mail" value="cea2024"/></div>
+        </div>
+        <div style="display:flex;gap:8px">
+          <button class="btn btn-prim" onclick="crearEvaluador()">💾 Dar de alta</button>
+          <button class="btn btn-out" onclick="document.getElementById('form-alta-eval').style.display='none'">Cancelar</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="tbl-wrap">
+      <table><thead><tr><th>Nombre</th><th>DNI</th><th>Mail</th><th>Carreras asignadas</th><th>Estado</th><th>Acciones</th></tr></thead>
+      <tbody>${rows}</tbody></table>
+    </div>
+  </div>`;
+}
+
+function showAltaEvaluador(){
+  document.getElementById("form-alta-eval").style.display="block";
+}
+
+function crearEvaluador(){
+  const nombre=document.getElementById("ev-nombre").value.trim();
+  const dni=document.getElementById("ev-dni").value.trim();
+  const mail=document.getElementById("ev-mail").value.trim();
+  const pass=document.getElementById("ev-pass").value.trim();
+  if(!nombre||!dni||!mail){alert("Complete todos los campos.");return;}
+  if(USUARIOS.find(u=>u.dni===dni)){alert("Ya existe un usuario con ese DNI.");return;}
+
+  const nuevoId="u"+Date.now();
+  USUARIOS.push({id:nuevoId,dni,pass,nombre,rol:"Evaluador/a",perfil:"evaluador",mail,activo:true});
+
+  // Mail de alta
+  simularMail(mail,
+    "CEA-UTN: Alta en el sistema de evaluación de carreras",
+    `Estimado/a ${nombre},\n\nSe le ha dado de alta en el sistema CEA-UTN para la evaluación de carreras a distancia.\n\nSus datos de acceso son:\n  Usuario (DNI): ${dni}\n  Contraseña: ${pass}\n\nIngrese en: [URL del sistema]\n\nPor seguridad, le recomendamos cambiar su contraseña al primer acceso.\n\nCEA – UTN`
+  );
+
+  document.getElementById("form-alta-eval").style.display="none";
+  goto("evaluadores");
+
+  setTimeout(()=>{
+    alert(`✅ Evaluador/a dado/a de alta exitosamente.\n📧 Mail de bienvenida enviado a ${mail}\n[SIMULACIÓN: ver consola]`);
+  },200);
+}
+
+function toggleActivo(uid){
+  const u=USUARIOS.find(x=>x.id===uid);
+  if(!u)return;
+  u.activo=!u.activo;
+  goto("evaluadores");
+}
+
+function abrirModalEvaluador(uid){
+  const u=USUARIOS.find(x=>x.id===uid);
+  if(!u)return;
+  document.getElementById("modal-titulo").textContent="✏️ Evaluador/a: "+u.nombre;
+  document.getElementById("modal-cuerpo").innerHTML=htmlModalEvaluador(u);
+  document.getElementById("modal-global").style.display="flex";
+}
+
+function htmlModalEvaluador(u){
+  const asignadas=CARRERAS.filter(c=>c.evaluadoresIds.includes(u.id));
+  const noAsignadas=CARRERAS.filter(c=>!c.evaluadoresIds.includes(u.id));
+  return`
+  <div style="margin-bottom:14px">
+    <div class="fg2" style="margin-bottom:6px">
+      <div class="fg-item"><label>Nombre</label><div style="font-weight:600">${u.nombre}</div></div>
+      <div class="fg-item"><label>DNI</label><div style="font-family:monospace">${u.dni}</div></div>
+    </div>
+    <div class="fg-item"><label>Mail</label><div>${u.mail}</div></div>
+  </div>
+  <h5 style="margin-bottom:8px">Carreras asignadas</h5>
+  <div class="tbl-wrap" style="margin-bottom:14px">
+    <table><thead><tr><th>Carrera</th><th>Período</th><th></th></tr></thead>
+    <tbody>${asignadas.length?asignadas.map(c=>`<tr>
+      <td style="font-size:13px">${c.nombre}</td>
+      <td style="font-size:12px;color:#546E7A">${c.periodo}</td>
+      <td><button class="btn btn-sm btn-out" style="color:#C62828;border-color:#C62828" onclick="desasignarCarrera('${u.id}',${c.id})">✖ Desasignar</button></td>
+    </tr>`).join(""):`<tr><td colspan="3" style="text-align:center;color:#90A4AE">Sin carreras asignadas</td></tr>`}</tbody></table>
+  </div>
+  <h5 style="margin-bottom:8px">Asignar nueva carrera</h5>
+  <div style="display:flex;gap:8px">
+    <select id="sel-asignar-carrera" style="flex:1;padding:9px 13px;border:1.5px solid #CFD8DC;border-radius:8px;font-size:13px;font-family:inherit">
+      ${noAsignadas.length?noAsignadas.map(c=>`<option value="${c.id}">${c.nombre} (${c.periodo})</option>`).join(""):`<option value="">No hay carreras disponibles</option>`}
+    </select>
+    <button class="btn btn-sm btn-prim" ${noAsignadas.length?"":"disabled"} onclick="asignarCarrera('${u.id}')">+ Asignar</button>
+  </div>`;
+}
+
+function desasignarCarrera(uid,cid){
+  const c=CARRERAS.find(x=>x.id===cid);
+  if(!c)return;
+  c.evaluadoresIds=c.evaluadoresIds.filter(id=>id!==uid);
+  delete c.evaluacionesCompletadas[uid];
+  const u=USUARIOS.find(x=>x.id===uid);
+  document.getElementById("modal-cuerpo").innerHTML=htmlModalEvaluador(u);
+  goto("evaluadores");
+  abrirModalEvaluador(uid);
+}
+
+function asignarCarrera(uid){
+  const sel=document.getElementById("sel-asignar-carrera");
+  if(!sel||!sel.value)return;
+  const c=CARRERAS.find(x=>x.id===+sel.value);
+  if(!c)return;
+  if(!c.evaluadoresIds.includes(uid))c.evaluadoresIds.push(uid);
+  goto("evaluadores");
+  abrirModalEvaluador(uid);
+}
+
+// ============================================================
+// ADMIN (configuración general)
+// ============================================================
+function htmlAdmin(){
+  const todosRows=USUARIOS.map(u=>`<tr>
+    <td style="font-weight:600">${u.nombre}</td>
+    <td style="font-family:monospace;font-size:12px">${u.dni}</td>
+    <td style="font-size:12px">${u.mail}</td>
+    <td><span class="badge ${u.perfil==="administrador"?"b1":u.perfil==="coordinador"?"b3":"b4"}" style="font-size:10px">${u.perfil}</span></td>
+    <td><span class="badge ${u.activo?"b4":"b1"}" style="font-size:10px">${u.activo?"Activo":"Inactivo"}</span></td>
+    <td><button class="btn btn-sm btn-prim" onclick="abrirModalUsuario('${u.id}')">✏️ Editar</button></td>
+  </tr>`).join("");
+
+  return`
+  <div style="margin-bottom:22px">
+    <h2 style="font-size:21px;font-weight:700;color:#003087">Administración del sistema</h2>
+    <p style="color:#78909C;margin-top:2px">Configuración global, usuarios y parámetros CEA</p>
+  </div>
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:18px">
+    <div class="card" style="grid-column:1/-1">
+      <div class="card-hdr"><h4>👥 Todos los usuarios del sistema</h4></div>
+      <div class="tbl-wrap"><table><thead><tr><th>Nombre</th><th>DNI</th><th>Mail</th><th>Perfil</th><th>Estado</th><th>Acciones</th></tr></thead><tbody>${todosRows}</tbody></table></div>
+    </div>
+    <div class="card">
+      <div class="card-hdr"><h4>⚙️ Configuración CEA</h4></div>
+      <div class="card-body">
+        ${[["Institución","Universidad Tecnológica Nacional"],["Organismo evaluador","Consejo Evaluador Académico – CEA"],["Marco normativo","SIED – Sistema Institucional de Educación a Distancia"],["Mail remitente","cea@utn.edu.ar"]].map(([l,v])=>`<div style="margin-bottom:13px"><div style="font-size:13px;font-weight:600;margin-bottom:4px">${l}</div><input style="width:100%;padding:8px 11px;border:1.5px solid #CFD8DC;border-radius:7px;font-size:13px;font-family:inherit" value="${v}"/></div>`).join("")}
+        <button class="btn btn-prim btn-sm" onclick="alert('Configuración guardada.')">Guardar configuración</button>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-hdr"><h4>📏 Escala de valoración vigente</h4></div>
+      <div class="card-body" style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+        ${ESCALA.map(e=>`<div style="background:${e.bg};border-radius:9px;padding:13px 15px;border-left:4px solid ${e.color}"><div style="font-size:24px;font-weight:800;color:${e.color}">${e.val}</div><div style="font-size:13px;font-weight:600;color:${e.color};margin-top:3px">${e.label.split("–")[1].trim()}</div></div>`).join("")}
+      </div>
+    </div>
+    <div class="card" style="grid-column:1/-1">
+      <div class="card-hdr"><h4>📧 Últimas 5 notificaciones enviadas</h4></div>
+      <div class="card-body">
+        ${MAIL_LOG.length===0?`<div class="alert al-info">No hay notificaciones aún.</div>`:
+          MAIL_LOG.slice(-5).reverse().map(m=>`<div class="mail-sim"><strong>${m.fecha}</strong> → ${m.para}<br/>${m.asunto}</div>`).join("")
+        }
+      </div>
+    </div>
+  </div>`;
+}
+
+// ============================================================
+// ADMIN: EDITAR USUARIO (modal)
+// ============================================================
+function abrirModalUsuario(uid){
+  const u=USUARIOS.find(x=>x.id===uid);
+  if(!u)return;
+  document.getElementById("modal-titulo").textContent="✏️ Editar usuario: "+u.nombre;
+  document.getElementById("modal-cuerpo").innerHTML=htmlModalUsuario(u);
+  document.getElementById("modal-global").style.display="flex";
+}
+
+function htmlModalUsuario(u){
+  const perfiles=[["administrador","Administrador"],["coordinador","Coordinador"],["evaluador","Evaluador/a"]];
+  return`
+  <div class="fg2" style="margin-bottom:12px">
+    <div class="fg-item"><label>Apellido y nombre</label><input id="um-nombre" value="${u.nombre}"/></div>
+    <div class="fg-item"><label>DNI</label><input id="um-dni" value="${u.dni}"/></div>
+  </div>
+  <div class="fg2" style="margin-bottom:12px">
+    <div class="fg-item"><label>Mail institucional</label><input type="email" id="um-mail" value="${u.mail}"/></div>
+    <div class="fg-item"><label>Perfil</label>
+      <select id="um-perfil">${perfiles.map(([v,l])=>`<option value="${v}"${u.perfil===v?" selected":""}>${l}</option>`).join("")}</select>
+    </div>
+  </div>
+  <div class="fg2" style="margin-bottom:14px">
+    <div class="fg-item"><label>Nueva contraseña</label><input id="um-pass" placeholder="Dejar vacío para no cambiar"/></div>
+    <div class="fg-item"><label>Estado</label>
+      <select id="um-activo"><option value="1"${u.activo?" selected":""}>Activo</option><option value="0"${!u.activo?" selected":""}>Inactivo</option></select>
+    </div>
+  </div>
+  <div style="display:flex;gap:8px;flex-wrap:wrap">
+    <button class="btn btn-prim" onclick="guardarUsuario('${u.id}')">💾 Guardar cambios</button>
+    <button class="btn btn-out" onclick="resetPassUsuario('${u.id}')">🔑 Resetear contraseña y enviar por mail</button>
+  </div>`;
+}
+
+function guardarUsuario(uid){
+  const u=USUARIOS.find(x=>x.id===uid);
+  if(!u)return;
+  const nombre=document.getElementById("um-nombre").value.trim();
+  const dni=document.getElementById("um-dni").value.trim();
+  const mail=document.getElementById("um-mail").value.trim();
+  const perfil=document.getElementById("um-perfil").value;
+  const pass=document.getElementById("um-pass").value.trim();
+  const activo=document.getElementById("um-activo").value==="1";
+  if(!nombre||!dni||!mail){alert("Complete nombre, DNI y mail.");return;}
+  if(USUARIOS.find(x=>x.dni===dni&&x.id!==uid)){alert("Ya existe otro usuario con ese DNI.");return;}
+
+  const rolLabels={administrador:"Administrador",coordinador:"Coordinador",evaluador:"Evaluador/a"};
+  u.nombre=nombre;u.dni=dni;u.mail=mail;u.perfil=perfil;u.rol=rolLabels[perfil];u.activo=activo;
+  if(pass)u.pass=pass;
+
+  closeModal();
+  goto(paginaActual);
+  alert("✅ Usuario actualizado correctamente.");
+}
+
+function resetPassUsuario(uid){
+  const u=USUARIOS.find(x=>x.id===uid);
+  if(!u)return;
+  const nueva="cea"+Math.floor(1000+Math.random()*9000);
+  u.pass=nueva;
+  simularMail(u.mail,"CEA-UTN: Restablecimiento de contraseña",
+    `Estimado/a ${u.nombre},\n\nUn administrador ha restablecido su contraseña.\nSu nueva contraseña temporal es: ${nueva}\n\nPor seguridad, le recomendamos cambiarla al ingresar.\n\nCEA – UTN`
+  );
+  alert(`✅ Contraseña restablecida.\n📧 Se envió la nueva contraseña a ${u.mail}\n[SIMULACIÓN: ver consola]`);
+  document.getElementById("modal-cuerpo").innerHTML=htmlModalUsuario(u);
+}
+
+// ============================================================
+// MODAL
+// ============================================================
+function cerrarModal(e){if(e.target===document.getElementById("modal-global"))closeModal();}
+function closeModal(){
+  document.getElementById("modal-global").style.display="none";
+  if(chartInst){chartInst.destroy();chartInst=null;}
+}
+</script>
+</body>
+</html>
