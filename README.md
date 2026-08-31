@@ -12,21 +12,26 @@ No requiere instalación: se abre en cualquier navegador.
 
 | Versión | Link | Instrumento |
 |---|---|---|
-| **v5 (actual)** | [/](https://loremoesch.github.io/cea-utn-demo/) | Rúbrica de Evaluación del Aula Virtual — CEA 2026 |
-| v4 (anterior) | [/v4.html](https://loremoesch.github.io/cea-utn-demo/v4.html) | Evaluación de carreras — 6 criterios / 27 indicadores |
+| **v5 (actual)** | [/](https://loremoesch.github.io/cea-utn-demo/) | Rúbrica de Evaluación de Aulas Virtuales en Carreras en Proceso de Implementación — **CEA 2026 VF2** |
+| v4 (anterior) | [/v4.html](https://loremoesch.github.io/cea-utn-demo/v4.html) | Evaluación de carreras — 6 criterios / 27 indicadores, escala 1 a 4 |
 
-## Qué cambió en la v5
+## Instrumento vigente (VF2)
 
-La rúbrica aprobada por el CEA en 2026 cambió la unidad de evaluación y la escala:
+La unidad de evaluación es **el aula virtual de cada asignatura**. Las carreras agrupan sus aulas y el coordinador emite el dictamen a nivel carrera.
 
-- **Unidad evaluada:** ahora es el **aula virtual de cada asignatura**, no la carrera. Se agregó la jerarquía Carrera → Asignatura → Aula.
-- **Instrumento:** 13 criterios planos (antes 6 criterios con 27 indicadores).
-- **Escala:** 1 a 5 — Excelente (5), Muy bueno (4), Bueno (3), Regular (2), Desaprobado (1). Antes era 1 a 4.
-- **Resultado:** puntaje sobre **65 puntos**, porcentaje de logro (puntaje ÷ 65 × 100) y valoración final por rangos.
-- Al evaluar, cada criterio muestra **el texto completo de los cinco descriptores** de la rúbrica; el evaluador selecciona el nivel que corresponde.
-- **Criterios críticos** (§6 de las notas metodológicas: 1, 2, 3, 6, 7, 10, 11) señalados, con alerta cuando alguno promedia ≤ 2,5 aunque el puntaje global sea alto.
+### Escala de valoración
 
-### Rangos de valoración final
+| Puntos | Nivel |
+|---|---|
+| 5 | Cumple plenamente |
+| 4 | Cumple mayoritariamente |
+| 3 | Cumple parcialmente |
+| 2 | Cumple insuficientemente |
+| 1 | No cumple |
+
+Al evaluar, cada criterio muestra **el texto completo de los cinco descriptores** y el evaluador selecciona el nivel que corresponde.
+
+### Valoración final (rangos orientativos, punto 5 de las notas)
 
 | Rango | % de logro |
 |---|---|
@@ -35,6 +40,19 @@ La rúbrica aprobada por el CEA en 2026 cambió la unidad de evaluación y la es
 | Bueno | 70 – 79 % |
 | Regular | 60 – 69 % |
 | Desaprobado | menos de 60 % |
+
+### Criterios críticos
+
+Los criterios 1, 2, 3, 6, 7, 10 y 11 están señalados como críticos según el punto 6 de las notas metodológicas. El sistema avisa cuando alguno promedia 2,5 o menos, aunque el puntaje global sea alto.
+
+## Criterio 13: dos variantes en discusión
+
+La VF2 incluye el criterio 13 **dos veces**: el original y una propuesta anotada como *"Esta reemplazaría la de arriba"*. Hasta que el CEA defina cuál rige, el prototipo muestra **las dos** para poder compararlas:
+
+- **13.A — Equipo académico y propuesta de acompañamiento** (el original)
+- **13.B — Diseño y potencialidad** (la propuesta de la VF2)
+
+Mientras convivan, el puntaje máximo es **70** en lugar de 65. Al eliminar una de las dos vuelve a 65 automáticamente, porque el máximo se calcula sobre la cantidad de criterios cargados.
 
 ## Accesos de demostración
 
