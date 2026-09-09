@@ -19,6 +19,8 @@ No requiere instalación: se abre en cualquier navegador.
 
 La unidad de evaluación es **el aula virtual de cada asignatura**. Las carreras agrupan sus aulas y el coordinador emite el dictamen a nivel carrera.
 
+**13 criterios · escala 1 a 5 · máximo 65 puntos.**
+
 ### Escala de valoración
 
 | Puntos | Nivel |
@@ -30,6 +32,22 @@ La unidad de evaluación es **el aula virtual de cada asignatura**. Las carreras
 | 1 | No cumple |
 
 Al evaluar, cada criterio muestra **el texto completo de los cinco descriptores** y el evaluador selecciona el nivel que corresponde.
+
+### Los 13 criterios
+
+1. Diseño, organización visual y navegación
+2. Estructura general del aula virtual
+3. Coherencia de los componentes didácticos
+4. Objetivos y contenidos de enseñanza
+5. Estrategias de enseñanza
+6. Actividades de aprendizaje
+7. Evaluación y retroalimentación
+8. Organización temporal y cronograma
+9. Uso pedagógico y pertinente del entorno virtual
+10. Comunicación, interacción y acompañamiento
+11. Accesibilidad e inclusión
+12. Recursos y materiales didácticos
+13. Diseño y potencialidad
 
 ### Valoración final (rangos orientativos, punto 5 de las notas)
 
@@ -44,15 +62,6 @@ Al evaluar, cada criterio muestra **el texto completo de los cinco descriptores*
 ### Criterios críticos
 
 Los criterios 1, 2, 3, 6, 7, 10 y 11 están señalados como críticos según el punto 6 de las notas metodológicas. El sistema avisa cuando alguno promedia 2,5 o menos, aunque el puntaje global sea alto.
-
-## Criterio 13: dos variantes en discusión
-
-La VF2 incluye el criterio 13 **dos veces**: el original y una propuesta anotada como *"Esta reemplazaría la de arriba"*. Hasta que el CEA defina cuál rige, el prototipo muestra **las dos** para poder compararlas:
-
-- **13.A — Equipo académico y propuesta de acompañamiento** (el original)
-- **13.B — Diseño y potencialidad** (la propuesta de la VF2)
-
-Mientras convivan, el puntaje máximo es **70** en lugar de 65. Al eliminar una de las dos vuelve a 65 automáticamente, porque el máximo se calcula sobre la cantidad de criterios cargados.
 
 ## Accesos de demostración
 

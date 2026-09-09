@@ -319,14 +319,13 @@ canvas{max-width:100%}
 // ============================================================
 // CEA-UTN v5 · RÚBRICA DE EVALUACIÓN DE AULAS VIRTUALES – CEA 2026
 // Fuente: Rubrica_CEA_Evaluacion_Aula_Virtual_2026_VF2.docx
-// 13 criterios; el 13 con dos variantes en discusión (13.A y 13.B).
-// Escala uniforme 1..5. El máximo se deriva de la cantidad de criterios.
+// 13 criterios · escala uniforme 1..5 · máximo 65 puntos
+// (el máximo se deriva de la cantidad de criterios cargados).
 // ============================================================
 
 const RUBRICA_VERSION = "CEA 2026 – VF2";
 const RUBRICA_TITULO = "Rúbrica de Evaluación de Aulas Virtuales en Carreras en Proceso de Implementación";
-// PUNTAJE_MAXIMO se define debajo de CRITERIOS (cantidad × 5), para que vuelva
-// solo a 65 cuando el CEA elimine una de las dos variantes del criterio 13.
+// PUNTAJE_MAXIMO se define debajo de CRITERIOS: se calcula como cantidad × 5.
 
 // Escala uniforme de 5 niveles (nota metodológica §3 de la rúbrica)
 const ESCALA = [
@@ -337,8 +336,8 @@ const ESCALA = [
   {val:"1", label:"No cumple",                corto:"No cumple",    bg:"#FFEBEE", color:"#C62828", cls:"b1"},
 ];
 
-// Rótulo del criterio: "1." … "12." para los numerados; "13.A" / "13.B" tal cual.
-function rotulo(c){ return /[AB]$/.test(String(c.nro)) ? String(c.nro) : c.nro + "."; }
+// Rótulo del criterio: "1." … "13."
+function rotulo(c){ return c.nro + "."; }
 
 // Rangos orientativos de interpretación global (nota metodológica §5)
 const RANGOS = [
@@ -355,7 +354,7 @@ const DIMENSIONES = [
   {id:"d1", label:"Diseño y estructura",        color:"#1565C0"},
   {id:"d2", label:"Propuesta didáctica",        color:"#6A1B9A"},
   {id:"d3", label:"Entorno, comunicación e inclusión", color:"#00695C"},
-  {id:"d4", label:"Recursos y equipo académico",color:"#E65100"},
+  {id:"d4", label:"Recursos y diseño del aula",color:"#E65100"},
 ];
 
 // critico: aspectos que la nota metodológica §6 señala como esenciales.
@@ -470,19 +469,10 @@ const CRITERIOS = [
     d1:"Los recursos son insuficientes o inadecuados para sostener el desarrollo de la asignatura."
   },
   {
-    nro:"13.A", id:"c13_equipo", dim:"d4", critico:false, variante:"A",
-    label:"Equipo académico y propuesta de acompañamiento",
-    d5:"La información disponible permite identificar al docente responsable y/o equipo académico, su formación pertinente y experiencia en modalidad a distancia. La propuesta define claramente las funciones de acompañamiento y, cuando corresponde, la relación tutor/estudiantes.",
-    d4:"La información del equipo académico es suficiente y pertinente, con formación y/o experiencia en modalidad a distancia. La propuesta de acompañamiento está definida.",
-    d3:"La información sobre el equipo o su experiencia en modalidad a distancia es parcial. La propuesta de acompañamiento está presente, aunque requiere mayor precisión.",
-    d2:"La información sobre el equipo es incompleta y la propuesta de acompañamiento presenta poca claridad o fundamentación.",
-    d1:"No se acredita adecuadamente la conformación del equipo o no se define una propuesta de acompañamiento compatible con el aula."
-  },
-  {
-    // Variante propuesta en la VF2 con la nota "Esta reemplazaría la de arriba".
-    // Convive con 13.A hasta que el CEA defina cuál rige; al borrar una, el
-    // puntaje máximo vuelve solo a 65.
-    nro:"13.B", id:"c13b_diseno", dim:"d4", critico:false, variante:"B",
+    // La VF2 proponía reemplazar el antiguo criterio 13 (Equipo académico y
+    // propuesta de acompañamiento) por éste. El CEA lo confirmó, así que es
+    // el único criterio 13 vigente.
+    nro:13, id:"c13_diseno", dim:"d4", critico:false,
     label:"Diseño y potencialidad",
     d5:"Aula ya armada con modelo completo: bienvenida en video del docente, hoja de ruta, cronograma con fechas, todas las unidades con materiales producidos para EaD, actividades interactivas, foros planificados y rúbricas. Se nota que ya dictó a distancia.",
     d4:"Estructura completa y coherente. Hay diseño instruccional claro, materiales adaptados a EaD, actividades variadas y espacios de tutoría previstos. Le faltan detalles menores.",
@@ -492,10 +482,8 @@ const CRITERIOS = [
   },
 ];
 
-// Derivado de la lista: al eliminar 13.A o 13.B vuelve solo a 65.
+// Derivado de la lista de criterios: 13 × 5 = 65.
 const PUNTAJE_MAXIMO = CRITERIOS.length * 5;
-// ¿Conviven todavía las dos variantes del criterio 13?
-const VARIANTES_13 = CRITERIOS.filter(c => c.variante).length > 1;
 
 // Notas metodológicas para evaluadores (se muestran en la app)
 const NOTAS_EVALUADOR = [
@@ -590,11 +578,7 @@ const COMENT_DEMO={
     "Los PDF son documentos accesibles y los videos tienen subtítulos.",
     "Buenas condiciones generales. Faltan textos alternativos en varias imágenes de la Unidad 2.",
     "Se detectan materiales escaneados sin capa de texto que impiden la lectura por lector de pantalla."],
-  c13_equipo:[
-    "",
-    "Se identifica al docente responsable y al tutor. Consta formación de posgrado en educación a distancia.",
-    "La información del equipo está disponible pero no se explicita la relación tutor/estudiantes."],
-  c13b_diseno:[
+  c13_diseno:[
     "El aula tiene hoja de ruta, cronograma con fechas y todas las unidades con material producido para EaD.",
     "Diseño instruccional claro y actividades variadas. Falta la bienvenida en video del docente.",
     "Estructura completa, aunque varios materiales son adaptaciones directas del cursado presencial."],
@@ -651,9 +635,9 @@ let AULAS=[
     evaluadoresIds:["u3","u4","u5"],
     completadas:{u3:true,u4:true,u5:true},
     valoraciones:buildDemo(
-      [5,5,4,4,4,5,4,4,4,5,4,4,3,4],
-      [4,4,3,4,4,4,4,4,4,4,4,4,4,4],
-      [4,4,3,3,3,3,3,4,3,4,2,3,3,3],
+      [5,5,4,4,4,5,4,4,4,5,4,4,4],
+      [4,4,3,4,4,4,4,4,4,4,4,4,4],
+      [4,4,3,3,3,3,3,4,3,4,2,3,3],
       COMENT_DEMO),
     obsGenerales:{
       o1:"Aula sólida y bien mantenida. Se recomienda revisar los enlaces del material complementario de la Unidad 3.",
@@ -670,9 +654,9 @@ let AULAS=[
     evaluadoresIds:["u3","u4","u5"],
     completadas:{u3:true,u4:false,u5:false},
     valoraciones:buildDemo(
-      [3,3,2,3,2,2,2,3,3,2,2,3,2,2],
-      [3,2,2,3,0,0,0,0,0,0,0,0,0,0],
-      [0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+      [3,3,2,3,2,2,2,3,3,2,2,3,2],
+      [3,2,2,3,0,0,0,0,0,0,0,0,0],
+      [0,0,0,0,0,0,0,0,0,0,0,0,0],
       null),
     obsGenerales:{
       o1:"El aula está publicada pero incompleta: falta cronograma detallado y las unidades 4 y 5 no tienen actividades cargadas.",
@@ -1509,7 +1493,6 @@ function htmlEvaluacion(){
   ${!esEval?`<div class="alert al-info">${usuarioActual.perfil==="coordinador"?"👁 Vista de solo lectura. Como coordinador/a no podés modificar lo que cargaron los evaluadores; tu tarea es el <strong>dictamen de la carrera</strong>.":"Vista de administrador: podés ver y corregir las tres columnas de evaluación."}</div>`:""}
   ${alertas.length?`<div class="alert al-warn"><span>⚠️</span><div><strong>Criterios críticos con promedio ≤ 2,5:</strong> ${alertas.map(c=>`${rotulo(c)} ${esc(c.label)}`).join(" · ")}<br/><span style="font-size:12px">Nota metodológica §6: un puntaje global alto no debe ocultar deficiencias en aspectos esenciales del aula.</span></div></div>`:""}
 
-  ${VARIANTES_13?`<div class="alert al-warn"><span>⚙️</span><div><strong>Criterio 13 en definición.</strong> La VF2 propone reemplazar <em>13.A Equipo académico</em> por <em>13.B Diseño y potencialidad</em>. Hasta que el CEA lo defina el sistema muestra <strong>las dos</strong> para poder compararlas, y por eso el máximo es ${PUNTAJE_MAXIMO} y no 65. Al eliminar una vuelve solo a 65.</div></div>`:""}
   <div class="eval-hdr">
     <h3>💻 ${esc(a.asignatura)}</h3>
     <p>${esc(car?car.nombre:"–")} · ${esc(car?car.facultad:"")}</p>
