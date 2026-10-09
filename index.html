@@ -207,6 +207,20 @@ tr:hover td{background:#FAFAFA}
 canvas{max-width:100%}
 .link-aula{color:#1565C0;font-size:12px;text-decoration:none}
 .link-aula:hover{text-decoration:underline}
+/* ===== PIE DE PÁGINA (el mismo del Moodle SIED) ===== */
+:root{--pie-bg:#978A84}
+.pie{background:var(--pie-bg);padding:14px 20px;display:flex;justify-content:center;align-items:center;flex-wrap:wrap;gap:16px}
+.pie-marca{height:50px;width:auto;display:block}
+.pie a{color:#111;display:inline-flex;line-height:0;transition:opacity .15s}
+.pie a:hover{opacity:.65}
+.pie svg{width:30px;height:30px;display:block}
+.pie-copy{color:#0C5678;font-size:14px;font-weight:700}
+/* login y app en columna, para que el pie quede siempre abajo */
+#login-screen{display:flex;flex-direction:column;min-height:100vh}
+#login-screen .login-bg{flex:1;min-height:0;padding:12px 16px}
+#app-shell{flex-direction:column;min-height:100vh}
+#app-shell .content{flex:1;min-height:0}
+#pie-app{margin-left:252px}
 @media print{
   .sidebar,.topbar,.btn,.no-print{display:none!important}
   .content{margin:0!important;padding:12px!important}
@@ -246,8 +260,10 @@ canvas{max-width:100%}
         <button class="btn-recup" onclick="showRecuperar()">¿Olvidaste tu contraseña? Recuperar acceso</button>
         <div class="demo-box">
           <strong>Accesos de demostración:</strong><br/>
+          <!-- Accesos ocultos para la prueba con evaluadores. Descomentar para mostrarlos.
           <strong>Admin:</strong> 20111111 / admin2026<br/>
           <strong>Coordinador:</strong> 20222222 / coord2026<br/>
+          -->
           <strong>Evaluadores:</strong> 20333333 · 20444444 · 20555555 / cea2026
         </div>
       </div>
@@ -271,6 +287,7 @@ canvas{max-width:100%}
       </div>
     </div>
   </div>
+  <footer class="pie no-print" id="pie-login"></footer>
 </div>
 
 <!-- ================= APP ================= -->
@@ -312,6 +329,7 @@ canvas{max-width:100%}
   </div>
 
   <div class="content" id="main-content"></div>
+  <footer class="pie no-print" id="pie-app"></footer>
 </div>
 
 <!-- ================= MODAL ================= -->
@@ -901,7 +919,7 @@ function doLogin(){
 
 function doLogout(){
   usuarioActual=null;
-  document.getElementById("login-screen").style.display="block";
+  document.getElementById("login-screen").style.display="";
   document.getElementById("app-shell").style.display="none";
   document.getElementById("inp-dni").value="";
   document.getElementById("inp-pass").value="";
@@ -2203,7 +2221,7 @@ const DOCUMENTOS=[
     titulo:"Rúbrica de Evaluación de Aulas Virtuales – SEAV 2026",
     descripcion:"Instrumento vigente: 13 criterios con sus descriptores, escala de 1 a 5, máximo de 65 puntos, rangos de valoración final y notas metodológicas para evaluadores.",
     archivo:"docs/Rubrica_SEAV_2026.pdf",
-    tipo:"PDF", tamano:"218 KB", fecha:"2026-10-09"
+    tipo:"PDF", tamano:"173 KB", fecha:"2026-10-09"
   },
 ];
 
@@ -2545,6 +2563,31 @@ function closeModal(){
   destruirCharts();
 }
 document.addEventListener("keydown",e=>{if(e.key==="Escape")closeModal();});
+
+// ============================================================
+// PIE DE PÁGINA: replica el del Moodle SIED (sied.utn.edu.ar),
+// mismos enlaces, mismo texto y mismos colores.
+// ============================================================
+const PIE_ENLACES=[
+  {titulo:"Sitio Oficial", url:"https://www.utn.edu.ar/es/secretaria-academica/educacion-distancia", icono:"web"},
+  {titulo:"Instagram",     url:"https://www.instagram.com/utn.rec.ar/",                               icono:"instagram"},
+  {titulo:"X",             url:"https://x.com/",                                                      icono:"x"},
+  {titulo:"Youtube",       url:"https://www.youtube.com/@utnrectorado1420",                           icono:"youtube"},
+];
+const PIE_ICONOS={
+  web:'<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="11" fill="currentColor"/><path d="M1.5 12h21M3.3 6.6h17.4M3.3 17.4h17.4M12 1.2c-3.3 3.2-3.3 18.4 0 21.6M12 1.2c3.3 3.2 3.3 18.4 0 21.6" fill="none" stroke-width="1.6" style="stroke:var(--pie-bg)"/></svg>',
+  instagram:'<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="2.2" y="2.2" width="19.6" height="19.6" rx="5.6" fill="none" stroke="currentColor" stroke-width="2.2"/><circle cx="12" cy="12" r="4.6" fill="none" stroke="currentColor" stroke-width="2.2"/><circle cx="17.6" cy="6.4" r="1.4" fill="currentColor"/></svg>',
+  x:'<svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M18.901 1.153h3.68l-8.04 9.19L24 22.846h-7.406l-5.8-7.584-6.638 7.584H.474l8.6-9.83L0 1.154h7.594l5.243 6.932ZM17.61 20.644h2.039L6.486 3.24H4.298Z"/></svg>',
+  youtube:'<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="0.5" y="4" width="23" height="16" rx="4.5" fill="currentColor"/><path d="M9.6 8.2v7.6l6.6-3.8z" fill="#fff"/></svg>',
+};
+function htmlPie(){
+  // Reusa el logo ya incrustado en el login, para no duplicar la imagen en el archivo.
+  const marca=document.querySelector(".login-marca");
+  return (marca&&marca.src?`<img class="pie-marca" src="${marca.src}" alt="UTN SIED"/>`:"")+
+    PIE_ENLACES.map(e=>`<a href="${e.url}" target="_blank" rel="noreferrer noopener" title="${e.titulo}" aria-label="${e.titulo}">${PIE_ICONOS[e.icono]}</a>`).join("")+
+    `<span class="pie-copy">© 2026 DGEaD y SIED - Rectorado</span>`;
+}
+document.querySelectorAll(".pie").forEach(p=>{p.innerHTML=htmlPie();});
 
 </script>
 </body>
