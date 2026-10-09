@@ -1,10 +1,18 @@
-# CEA-UTN · Prototipo del sistema de evaluación
+# SEAV · Sistema de Evaluación de Aulas Virtuales
 
-Prototipo navegable del sistema de evaluación del Consejo Evaluador Académico (CEA) de la UTN.
+Prototipo navegable del sistema con el que el Consejo Evaluador Académico (CEA) de la UTN evalúa las aulas virtuales de las carreras a distancia. DGEDySIED 2026.
 
 **Ver la versión actual:** https://loremoesch.github.io/cea-utn-demo/
 
 No requiere instalación: se abre en cualquier navegador.
+
+## Documentación de uso del Sistema
+
+La sección **Documentación de uso del Sistema** del menú está disponible para todos los perfiles. Hoy contiene:
+
+- [Rúbrica de Evaluación de Aulas Virtuales – SEAV 2026 (PDF)](docs/Rubrica_SEAV_2026.pdf)
+
+Para publicar un documento nuevo: copiar el archivo en la carpeta `docs/` y agregar una entrada a la lista `DOCUMENTOS` en `index.html`.
 
 ---
 
