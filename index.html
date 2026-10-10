@@ -117,9 +117,12 @@ tr:hover td{background:#FAFAFA}
 .score-box .sb-v{font-size:23px;font-weight:800;margin-top:2px}
 .score-box .sb-s{font-size:10.5px;opacity:.7}
 /* ===== TABS ===== */
-.tabs{display:flex;gap:2px;padding:0 20px;border-bottom:2px solid #F0F0F0;flex-wrap:wrap}
-.tab{padding:10px 14px;font-size:13px;font-weight:600;color:#78909C;cursor:pointer;border-bottom:2px solid transparent;margin-bottom:-2px;transition:all .15s;white-space:nowrap}
-.tab:hover{color:#1565C0}.tab.active{color:#003087;border-bottom-color:#003087}
+/* Pestañas de color: cada una recibe --tc (color), --tc-bg (tinte) y --tc-bd (borde) */
+.tabs{display:flex;gap:8px;padding:14px 16px;border-bottom:1px solid #ECEFF1;flex-wrap:wrap}
+.tab{--tc:#003087;--tc-bg:#00308714;--tc-bd:#00308755;padding:9px 14px;font-size:13px;font-weight:700;color:var(--tc);background:var(--tc-bg);border:1.5px solid var(--tc-bd);border-radius:9px;cursor:pointer;transition:all .15s;white-space:nowrap}
+.tab:hover{border-color:var(--tc);box-shadow:0 2px 6px rgba(0,0,0,.08)}
+.tab.active{background:var(--tc);color:#fff;border-color:var(--tc);box-shadow:0 2px 8px rgba(0,0,0,.15)}
+.tab.active .pill{background:rgba(255,255,255,.25);color:#fff}
 /* ===== CRITERIO / RÚBRICA ===== */
 .crit-card{background:#fff;border:1px solid #E0E0E0;border-radius:10px;margin-bottom:16px;overflow:hidden}
 .crit-head{display:flex;align-items:flex-start;gap:12px;padding:14px 16px;background:#FAFBFC;border-bottom:1px solid #ECEFF1}
@@ -207,14 +210,14 @@ tr:hover td{background:#FAFAFA}
 canvas{max-width:100%}
 .link-aula{color:#1565C0;font-size:12px;text-decoration:none}
 .link-aula:hover{text-decoration:underline}
-/* ===== PIE DE PÁGINA (el mismo del Moodle SIED) ===== */
-:root{--pie-bg:#978A84}
-.pie{background:var(--pie-bg);padding:14px 20px;display:flex;justify-content:center;align-items:center;flex-wrap:wrap;gap:16px}
-.pie-marca{height:50px;width:auto;display:block}
-.pie a{color:#111;display:inline-flex;line-height:0;transition:opacity .15s}
-.pie a:hover{opacity:.65}
-.pie svg{width:30px;height:30px;display:block}
-.pie-copy{color:#0C5678;font-size:14px;font-weight:700}
+/* ===== PIE DE PÁGINA (contenido del Moodle SIED, colores del SEAV) ===== */
+:root{--pie-bg:#003087}
+.pie{background:var(--pie-bg);padding:14px 20px;display:flex;justify-content:center;align-items:center;flex-wrap:wrap;gap:16px;border-top:3px solid #1565C0}
+.pie-marca{height:46px;width:auto;display:block}
+.pie a{color:#fff;display:inline-flex;line-height:0;transition:opacity .15s}
+.pie a:hover{opacity:.7}
+.pie svg{width:28px;height:28px;display:block}
+.pie-copy{color:rgba(255,255,255,.92);font-size:13.5px;font-weight:700}
 /* login y app en columna, para que el pie quede siempre abajo */
 #login-screen{display:flex;flex-direction:column;min-height:100vh}
 #login-screen .login-bg{flex:1;min-height:0;padding:12px 16px}
@@ -345,12 +348,12 @@ canvas{max-width:100%}
 <script>
 // ============================================================
 // CEA-UTN v5 · RÚBRICA DE EVALUACIÓN DE AULAS VIRTUALES – CEA 2026
-// Fuente: Rubrica_CEA_Evaluacion_Aula_Virtual_2026_VF2.docx
+// Fuente: Rubrica_SEAV_2026.docx
 // 13 criterios · escala uniforme 1..5 · máximo 65 puntos
 // (el máximo se deriva de la cantidad de criterios cargados).
 // ============================================================
 
-const RUBRICA_VERSION = "CEA 2026 – VF2";
+const RUBRICA_VERSION = "SEAV 2026";
 const RUBRICA_TITULO = "Rúbrica de Evaluación de Aulas Virtuales en Carreras en Proceso de Implementación";
 // PUNTAJE_MAXIMO se define debajo de CRITERIOS: se calcula como cantidad × 5.
 
@@ -496,7 +499,7 @@ const CRITERIOS = [
     d1:"Los recursos son insuficientes o inadecuados para sostener el desarrollo de la asignatura."
   },
   {
-    // La VF2 proponía reemplazar el antiguo criterio 13 (Equipo académico y
+    // El borrador de la rúbrica proponía reemplazar el antiguo criterio 13 (Equipo académico y
     // propuesta de acompañamiento) por éste. El CEA lo confirmó, así que es
     // el único criterio 13 vigente.
     nro:13, id:"c13_diseno", dim:"d4", critico:false,
@@ -1547,9 +1550,9 @@ function htmlEvaluacion(){
 
   <div class="card">
     <div class="tabs" id="tabs-eval">
-      ${DIMENSIONES.map(d=>`<div class="tab${tabEval===d.id?" active":""}" onclick="cambiarTab('${d.id}')">${d.label} <span class="pill" style="margin-left:4px">${CRITERIOS.filter(c=>c.dim===d.id).length}</span></div>`).join("")}
-      <div class="tab${tabEval==="todos"?" active":""}" onclick="cambiarTab('todos')">📄 Rúbrica completa</div>
-      <div class="tab${tabEval==="notas"?" active":""}" onclick="cambiarTab('notas')">📘 Notas al evaluador</div>
+      ${DIMENSIONES.map(d=>`<div class="tab${tabEval===d.id?" active":""}" style="${estiloTab(d.color)}" onclick="cambiarTab('${d.id}')">${d.label} <span class="pill" style="margin-left:4px">${CRITERIOS.filter(c=>c.dim===d.id).length}</span></div>`).join("")}
+      <div class="tab${tabEval==="todos"?" active":""}" style="${estiloTab("#003087")}" onclick="cambiarTab('todos')">📄 Rúbrica completa</div>
+      <div class="tab${tabEval==="notas"?" active":""}" style="${estiloTab("#546E7A")}" onclick="cambiarTab('notas')">📘 Notas al evaluador</div>
     </div>
     <div class="card-body" id="tab-contenido">${renderTab(a)}</div>
   </div>
@@ -1569,6 +1572,10 @@ function botonesEval(a){
 }
 
 function cambiarAula(id){aulaEvalId=+id;tabEval="d1";renderPagina();}
+
+// Color de una pestaña: texto/relleno, tinte de fondo (8 %) y borde (33 %)
+function estiloTab(color){return`--tc:${color};--tc-bg:${color}14;--tc-bd:${color}55`;}
+function colorDim(dimId){const d=DIMENSIONES.find(x=>x.id===dimId);return d?d.color:"#003087";}
 
 function cambiarTab(id){
   tabEval=id;
@@ -1636,9 +1643,9 @@ function renderCriterio(a,c){
       <div class="ev3-grid">${cols}</div>`;
   }
 
-  return`<div class="crit-card" id="crit-${c.id}">
+  return`<div class="crit-card" id="crit-${c.id}" style="border-left:4px solid ${colorDim(c.dim)}">
     <div class="crit-head">
-      <div class="crit-num" style="font-size:${String(c.nro).length>2?"10px":"13px"}">${c.nro}</div>
+      <div class="crit-num" style="background:${colorDim(c.dim)};font-size:${String(c.nro).length>2?"10px":"13px"}">${c.nro}</div>
       <div style="flex:1">
         <h5>${esc(c.label)}</h5>
         <div class="crit-sub">${c.critico?'<span class="badge b-crit">Criterio crítico §6</span> ':""}Máximo 5 puntos</div>
@@ -2563,8 +2570,8 @@ function closeModal(){
 document.addEventListener("keydown",e=>{if(e.key==="Escape")closeModal();});
 
 // ============================================================
-// PIE DE PÁGINA: replica el del Moodle SIED (sied.utn.edu.ar),
-// mismos enlaces, mismo texto y mismos colores.
+// PIE DE PÁGINA: mismos enlaces y texto que el del Moodle SIED
+// (sied.utn.edu.ar), con los colores del SEAV.
 // ============================================================
 const PIE_ENLACES=[
   {titulo:"Sitio Oficial", url:"https://www.utn.edu.ar/es/secretaria-academica/educacion-distancia", icono:"web"},
@@ -2576,11 +2583,11 @@ const PIE_ICONOS={
   web:'<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="11" fill="currentColor"/><path d="M1.5 12h21M3.3 6.6h17.4M3.3 17.4h17.4M12 1.2c-3.3 3.2-3.3 18.4 0 21.6M12 1.2c3.3 3.2 3.3 18.4 0 21.6" fill="none" stroke-width="1.6" style="stroke:var(--pie-bg)"/></svg>',
   instagram:'<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="2.2" y="2.2" width="19.6" height="19.6" rx="5.6" fill="none" stroke="currentColor" stroke-width="2.2"/><circle cx="12" cy="12" r="4.6" fill="none" stroke="currentColor" stroke-width="2.2"/><circle cx="17.6" cy="6.4" r="1.4" fill="currentColor"/></svg>',
   x:'<svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M18.901 1.153h3.68l-8.04 9.19L24 22.846h-7.406l-5.8-7.584-6.638 7.584H.474l8.6-9.83L0 1.154h7.594l5.243 6.932ZM17.61 20.644h2.039L6.486 3.24H4.298Z"/></svg>',
-  youtube:'<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="0.5" y="4" width="23" height="16" rx="4.5" fill="currentColor"/><path d="M9.6 8.2v7.6l6.6-3.8z" fill="#fff"/></svg>',
+  youtube:'<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="0.5" y="4" width="23" height="16" rx="4.5" fill="currentColor"/><path d="M9.6 8.2v7.6l6.6-3.8z" style="fill:var(--pie-bg)"/></svg>',
 };
 function htmlPie(){
-  // Reusa el logo ya incrustado en el login, para no duplicar la imagen en el archivo.
-  const marca=document.querySelector(".login-marca");
+  // Reusa el logo blanco ya incrustado en el menú lateral, para no duplicar la imagen en el archivo.
+  const marca=document.querySelector(".sb-marca");
   return (marca&&marca.src?`<img class="pie-marca" src="${marca.src}" alt="UTN SIED"/>`:"")+
     PIE_ENLACES.map(e=>`<a href="${e.url}" target="_blank" rel="noreferrer noopener" title="${e.titulo}" aria-label="${e.titulo}">${PIE_ICONOS[e.icono]}</a>`).join("")+
     `<span class="pie-copy">© 2026 DGEaD y SIED - Rectorado</span>`;
