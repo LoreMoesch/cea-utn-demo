@@ -230,6 +230,12 @@ canvas{max-width:100%}
   .card{box-shadow:none!important;border:1px solid #ddd!important}
   .modal-overlay{position:static;background:none;padding:0;overflow:visible}
   .modal{max-width:100%;box-shadow:none}
+  body{background:#fff}
+  /* Con un reporte abierto se imprime solo el reporte, no la pantalla de atrás */
+  body.imprime-modal #app-shell{display:none!important}
+  body.imprime-modal .modal-overlay{display:block!important}
+  .tbl-wrap{overflow:visible}
+  .dict-hdr,.badge{-webkit-print-color-adjust:exact;print-color-adjust:exact}
 }
 @media(max-width:1200px){
   .desc-grid{grid-template-columns:repeat(2,1fr)}
@@ -2568,6 +2574,12 @@ function closeModal(){
   destruirCharts();
 }
 document.addEventListener("keydown",e=>{if(e.key==="Escape")closeModal();});
+
+// Sirve también para Ctrl+P, no solo para los botones de Imprimir.
+window.addEventListener("beforeprint",()=>{
+  document.body.classList.toggle("imprime-modal",document.getElementById("modal-global").style.display==="flex");
+});
+window.addEventListener("afterprint",()=>document.body.classList.remove("imprime-modal"));
 
 // ============================================================
 // PIE DE PÁGINA: mismos enlaces y texto que el del Moodle SIED
