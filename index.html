@@ -187,6 +187,19 @@ tr:hover td{background:#FAFAFA}
 .doc-meta{font-size:11px;color:#90A4AE;margin-top:5px}
 .doc-acc{display:flex;gap:8px;flex-shrink:0}
 .doc-acc a{text-decoration:none}
+/* ===== SEGUIMIENTO ===== */
+.seg-aula{font-size:13px;font-weight:700;color:#37474F;margin:16px 0 8px;display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.seg-item{display:flex;gap:14px;align-items:flex-start;padding:14px;border:1px solid #E0E0E0;border-radius:10px;margin-bottom:10px;background:#fff}
+.seg-item.ok{background:#F1F8E9;border-color:#C5E1A5}
+.seg-check{display:flex;flex-direction:column;align-items:center;gap:4px;min-width:74px;font-size:11px;font-weight:700;color:#546E7A;text-align:center;cursor:pointer}
+.seg-check input{width:22px;height:22px;cursor:pointer;accent-color:#2E7D32}
+.seg-check input:disabled{cursor:default}
+.seg-cuerpo{flex:1;min-width:0}
+.seg-crit{font-size:13px;font-weight:700;display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.seg-texto{font-size:13px;color:#37474F;line-height:1.5;margin:7px 0;padding:8px 11px;background:#F8F9FA;border-left:3px solid #CFD8DC;border-radius:4px}
+.seg-meta{font-size:11.5px;color:#78909C}
+.seg-nota{width:100%;margin-top:8px;padding:7px 10px;border:1px solid #CFD8DC;border-radius:7px;font-size:12.5px;font-family:inherit;resize:vertical;min-height:38px}
+.seg-nota:disabled{background:#F5F5F5;color:#546E7A}
 .arch-item span.name{flex:1;font-size:12.5px}
 .alert{padding:11px 14px;border-radius:8px;font-size:13px;margin-bottom:14px;display:flex;align-items:flex-start;gap:8px;line-height:1.5}
 .al-info{background:#E3F2FD;color:#1565C0;border:1px solid #90CAF9}
@@ -313,6 +326,8 @@ canvas{max-width:100%}
       <button class="nav-item" id="nav-evaluacion" onclick="goto('evaluacion')">✏️ Rúbrica de evaluación</button>
       <button class="nav-item" id="nav-misevaluaciones" onclick="goto('misevaluaciones')">📝 Mis Evaluaciones</button>
       <button class="nav-item" id="nav-reportes" onclick="goto('reportes')">📊 Reportes</button>
+      <button class="nav-item" id="nav-seguimiento" onclick="goto('seguimiento')">📌 Seguimiento</button>
+      <button class="nav-item" id="nav-continuidad" onclick="goto('continuidad')">🔄 Continuidad <span style="margin-left:auto;font-size:9.5px;font-weight:700;padding:2px 7px;border-radius:10px;background:rgba(255,255,255,.18)">Próximamente</span></button>
       <button class="nav-item" id="nav-archivos" onclick="goto('archivos')">📁 Archivos</button>
       <button class="nav-item" id="nav-documentacion" onclick="goto('documentacion')">📚 Documentación de uso del Sistema</button>
       <button class="nav-item" id="nav-evaluadores" onclick="goto('evaluadores')">👥 Evaluadores</button>
@@ -619,6 +634,23 @@ const COMENT_DEMO={
     "Estructura completa, aunque varios materiales son adaptaciones directas del cursado presencial."],
 };
 
+// Observaciones demo del aula 301 (Ingeniería en Sistemas): evaluación completa,
+// deja a esa carrera en condiciones de recibir el dictamen.
+const COMENT_301={
+  c07_evaluacion:[
+    "",
+    "Falta publicar la rúbrica de corrección del trabajo integrador final.",
+    "Las instancias de evaluación son solo sumativas; no hay retroalimentación registrada."],
+  c10_comunicacion:[
+    "No se explicitan los tiempos de respuesta del foro de consultas.",
+    "",
+    "El foro de consultas tiene preguntas sin responder desde hace más de dos semanas."],
+  c11_accesibilidad:[
+    "Los videos de las clases grabadas no tienen subtítulos ni transcripción.",
+    "",
+    "Varios PDF son escaneos sin texto seleccionable."],
+};
+
 // ---------- CARRERAS ----------
 let CARRERAS=[
   {
@@ -738,11 +770,40 @@ let AULAS=[
     link:"https://campus.frm.utn.edu.ar/course/view.php?id=2210",
     fechaEval:"2026-06-15",
     evaluadoresIds:["u3","u4","u5"],
-    completadas:{u3:false,u4:false,u5:false},
-    valoraciones:buildEmpty(),
-    obsGenerales:{o1:"",o2:"",o3:""},
+    completadas:{u3:true,u4:true,u5:true},
+    valoraciones:buildDemo(
+      [4,4,4,3,4,4,3,4,4,3,2,4,4],
+      [5,4,4,4,4,4,3,3,4,4,3,4,4],
+      [4,3,3,3,3,4,2,3,3,2,2,3,3],
+      COMENT_301),
+    obsGenerales:{
+      o1:"Aula bien estructurada. Prioridad: accesibilidad de los videos y explicitar los tiempos de respuesta.",
+      o2:"Propuesta didáctica sólida. Completar los instrumentos de evaluación del trabajo integrador.",
+      o3:"Cumple en lo general, con deudas en evaluación formativa, comunicación y accesibilidad."
+    },
   },
 ];
+
+// ============================================================
+// SEGUIMIENTO DE OBSERVACIONES (lo realizan los coordinadores)
+// Cada ítem es una observación de un evaluador que el coordinador eligió
+// seguir. Se guarda una copia del texto y la valoración al momento de elegirla.
+// clave = aulaId|criterioId|evaluadorId  (criterioId "general" = obs. general)
+// ============================================================
+let SEGUIMIENTO=[
+  {id:1, clave:"101|c11_accesibilidad|u5", aulaId:101, critId:"c11_accesibilidad", uid:"u5", valor:"2",
+   texto:"Se detectan materiales escaneados sin capa de texto que impiden la lectura por lector de pantalla.",
+   fechaAlta:"2026-05-02", altaPor:"Yanina", estado:"pendiente", fechaVerif:"", verifPor:"",
+   nota:"Se pidió al docente reemplazar los escaneos por versiones accesibles antes del segundo cuatrimestre."},
+  {id:2, clave:"101|c01_diseno|u4", aulaId:101, critId:"c01_diseno", uid:"u4", valor:"4",
+   texto:"Buena organización general. Se detectaron dos enlaces rotos en la Unidad 3 (material complementario).",
+   fechaAlta:"2026-05-02", altaPor:"Yanina", estado:"subsanada", fechaVerif:"2026-06-10", verifPor:"Yanina",
+   nota:"Verificado en el aula: los dos enlaces fueron corregidos."},
+  {id:3, clave:"101|c07_evaluacion|u5", aulaId:101, critId:"c07_evaluacion", uid:"u5", valor:"3",
+   texto:"La evaluación es mayormente sumativa. No se identifican instancias diagnósticas.",
+   fechaAlta:"2026-05-02", altaPor:"Yanina", estado:"pendiente", fechaVerif:"", verifPor:"", nota:""},
+];
+let segVista="seguimiento", segCarrera="todas", segEstado="pendiente";
 
 // ============================================================
 // ESTADO DE LA APLICACIÓN
@@ -853,6 +914,32 @@ function consolidadoCarrera(carreraId){
   return{pct,puntos,rango:rangoDe(pct),aulas:as.length,completas,evaluadas:conDatos.length,sinDatos:false};
 }
 
+// ---------- requisitos y bloqueo del dictamen ----------
+// Un aula está lista cuando tiene sus 3 evaluadores y los 3 cerraron la evaluación.
+const EVALUADORES_POR_AULA=3;
+function aulaLista(a){
+  return a.evaluadoresIds.length===EVALUADORES_POR_AULA&&a.evaluadoresIds.every(id=>a.completadas[id]===true);
+}
+// El dictamen de una carrera se puede emitir solo cuando TODAS sus aulas están listas.
+function requisitosDictamen(cid){
+  const as=aulasDe(cid);
+  const pendientes=as.filter(a=>!aulaLista(a)).map(a=>{
+    const n=a.evaluadoresIds.length;
+    const cerradas=a.evaluadoresIds.filter(id=>a.completadas[id]===true).length;
+    const motivo=n<EVALUADORES_POR_AULA
+      ?`tiene ${n} evaluador${n===1?"":"es"} asignado${n===1?"":"s"}; se requieren ${EVALUADORES_POR_AULA}`
+      :`${cerradas} de ${n} evaluaciones cerradas`;
+    return{aula:a,motivo};
+  });
+  return{ok:as.length>0&&!pendientes.length,sinAulas:!as.length,pendientes};
+}
+// Emitido el dictamen, la carrera queda bloqueada: dictamen, evaluaciones y aulas solo para consulta.
+function carreraBloqueada(cid){const c=getCarrera(cid);return!!(c&&c.emitido);}
+function avisoBloqueo(cid){
+  const c=getCarrera(cid);
+  alert(`🔒 La carrera "${c?c.nombre:""}" ya tiene el dictamen emitido.\n\nSus aulas, evaluaciones y el dictamen quedan solo para consulta.`);
+}
+
 function getUsuario(id){return USUARIOS.find(u=>u.id===id)||null;}
 function getCarrera(id){return CARRERAS.find(c=>c.id===id)||null;}
 function getAula(id){return AULAS.find(a=>a.id===id)||null;}
@@ -943,6 +1030,8 @@ function aplicarPermisosSidebar(){
     evaluacion:p==="administrador"||p==="coordinador",
     misevaluaciones:p==="evaluador",
     reportes:p!=="evaluador",
+    seguimiento:p!=="evaluador",
+    continuidad:p!=="evaluador",
     archivos:true,
     documentacion:true,
     evaluadores:p==="administrador",
@@ -957,7 +1046,7 @@ function aplicarPermisosSidebar(){
 // ============================================================
 // NAVEGACIÓN
 // ============================================================
-const TITULOS={dashboard:"Inicio",carreras:"Carreras",aulas:"Aulas Virtuales",evaluacion:"Rúbrica de Evaluación del Aula Virtual",reportes:"Reportes y Análisis",archivos:"Gestión de Archivos",evaluadores:"Gestión de Evaluadores",admin:"Administración",misevaluaciones:"Mis Evaluaciones",documentacion:"Documentación de uso del Sistema"};
+const TITULOS={dashboard:"Inicio",carreras:"Carreras",aulas:"Aulas Virtuales",evaluacion:"Rúbrica de Evaluación del Aula Virtual",reportes:"Reportes y Análisis",archivos:"Gestión de Archivos",evaluadores:"Gestión de Evaluadores",admin:"Administración",misevaluaciones:"Mis Evaluaciones",documentacion:"Documentación de uso del Sistema",seguimiento:"Seguimiento de observaciones",continuidad:"Continuidad de carreras"};
 
 function puedeAcceder(pag){
   const p=usuarioActual?.perfil;
@@ -994,6 +1083,8 @@ function renderPagina(){
     case"evaluacion":c.innerHTML=htmlEvaluacion();break;
     case"misevaluaciones":c.innerHTML=htmlMisEvaluaciones();break;
     case"reportes":c.innerHTML=htmlReportes();break;
+    case"seguimiento":c.innerHTML=htmlSeguimiento();break;
+    case"continuidad":c.innerHTML=htmlContinuidad();break;
     case"archivos":c.innerHTML=htmlArchivos();setTimeout(renderArchivos,50);break;
     case"documentacion":c.innerHTML=htmlDocumentacion();break;
     case"evaluadores":c.innerHTML=htmlEvaluadores();break;
@@ -1038,6 +1129,16 @@ function badgeDictamen(e){
   return`<span class="badge ${cls}">${l}</span>`;
 }
 
+// Columna "Dictamen": emitido (con candado), borrador, o listo para emitir
+function celdaDictamen(c){
+  if(c.emitido)return`${badgeDictamen(c.estado)} <span title="Emitido el ${fmtFecha(c.fechaDictamen)}">🔒</span>`;
+  const req=requisitosDictamen(c.id);
+  let extra="";
+  if(req.ok)extra+=` <span class="badge b-comp" style="font-size:10px">Listo para emitir</span>`;
+  if(c.dictamen)extra+=` <span class="pill" style="font-size:10px">Borrador</span>`;
+  return badgeDictamen("pendiente")+extra;
+}
+
 function escalaOpts(sel="",dis=false){
   return`<option value="">– Sin valorar –</option>`+ESCALA.map(e=>`<option value="${e.val}"${String(sel)===e.val?" selected":""}>${e.val} – ${e.label}</option>`).join("");
 }
@@ -1067,7 +1168,7 @@ function htmlDashboard(){
       <td style="text-align:center">${k.completas}/${k.aulas}</td>
       <td style="text-align:center;font-weight:700;color:${pctColor(k.pct)}">${k.sinDatos?"–":k.pct+" %"}</td>
       <td>${k.sinDatos?'<span class="pill">Sin datos</span>':badgeRango(k.pct,k.rango)}</td>
-      <td>${badgeDictamen(c.estado)}</td>
+      <td>${celdaDictamen(c)}</td>
     </tr>`;
   }).join("");
 
@@ -1160,8 +1261,8 @@ function htmlCarreras(){
     const k=consolidadoCarrera(c.id);
     const prog=k.aulas?Math.round((k.completas/k.aulas)*100):0;
     let acciones=`<button class="btn btn-sm btn-out" onclick="verAulasDe(${c.id})">💻 Aulas (${k.aulas})</button>`;
-    if(esAdmin)acciones+=` <button class="btn btn-sm btn-prim" onclick="abrirModalCarrera(${c.id})">✏️</button>`;
-    if(esAdmin||esCoord)acciones+=` <button class="btn btn-sm btn-prim" onclick="abrirDictamen(${c.id})">🏛 Dictamen</button>`;
+    if(esAdmin&&!c.emitido)acciones+=` <button class="btn btn-sm btn-prim" onclick="abrirModalCarrera(${c.id})">✏️</button>`;
+    if(esAdmin||esCoord)acciones+=` <button class="btn btn-sm btn-prim" onclick="abrirDictamen(${c.id})">${c.emitido?"🔒 Ver dictamen":"🏛 Dictamen"}</button>`;
     return`<tr>
       <td style="font-weight:600;max-width:220px">${esc(c.nombre)}</td>
       <td style="font-size:12px;color:#546E7A">${esc(c.facultad)}</td>
@@ -1172,7 +1273,7 @@ function htmlCarreras(){
       </td>
       <td style="text-align:center;font-weight:700;color:${pctColor(k.pct)}">${k.sinDatos?"–":k.pct+" %"}</td>
       <td>${k.sinDatos?'<span class="pill">Sin datos</span>':badgeRango(k.pct,k.rango)}</td>
-      <td>${badgeDictamen(c.estado)}</td>
+      <td>${celdaDictamen(c)}</td>
       <td style="white-space:nowrap">${acciones}</td>
     </tr>`;
   }).join("");
@@ -1236,6 +1337,7 @@ function verAulasDe(cid){filtroCarreraAulas=String(cid);goto("aulas");}
 
 function abrirModalCarrera(cid){
   const c=getCarrera(cid);if(!c)return;
+  if(c.emitido){avisoBloqueo(cid);return;}
   document.getElementById("modal-titulo").textContent="✏️ Editar carrera";
   document.getElementById("modal-cuerpo").innerHTML=`
   <div class="fg2" style="margin-bottom:12px">
@@ -1293,7 +1395,7 @@ function htmlAulas(){
       else acc=`<button class="btn btn-sm btn-prim" onclick="abrirEval(${a.id})">✏️ ${prog>0?"Continuar":"Evaluar"}</button>`;
     }else{
       acc=`<button class="btn btn-sm btn-prim" onclick="abrirEval(${a.id})">👁 Ver rúbrica</button>`;
-      if(esAdmin)acc+=` <button class="btn btn-sm btn-out" onclick="abrirModalAula(${a.id})">✏️</button>`;
+      if(esAdmin&&!carreraBloqueada(a.carreraId))acc+=` <button class="btn btn-sm btn-out" onclick="abrirModalAula(${a.id})">✏️</button>`;
     }
 
     return`<tr${esEval&&!mia?" style='opacity:.5;background:#fafafa'":""}>
@@ -1333,7 +1435,7 @@ function htmlAulas(){
       <div class="card-hdr"><h4>Registrar nueva aula virtual</h4></div>
       <div class="card-body">
         <div class="fg2" style="margin-bottom:12px">
-          <div class="fg-item"><label>Carrera</label><select id="na-carrera">${CARRERAS.map(c=>`<option value="${c.id}">${esc(c.nombre)}</option>`).join("")}</select></div>
+          <div class="fg-item"><label>Carrera</label><select id="na-carrera">${CARRERAS.filter(c=>!c.emitido).map(c=>`<option value="${c.id}">${esc(c.nombre)}</option>`).join("")}</select></div>
           <div class="fg-item"><label>Asignatura / espacio curricular</label><input id="na-asignatura" placeholder="Nombre de la asignatura"/></div>
         </div>
         <div class="fg2" style="margin-bottom:12px">
@@ -1375,6 +1477,9 @@ function validarSelEvals(){
 }
 
 function crearAula(){
+  const carreraSel=+document.getElementById("na-carrera").value;
+  if(!carreraSel){alert("No hay carreras abiertas: todas tienen el dictamen emitido.");return;}
+  if(carreraBloqueada(carreraSel)){avisoBloqueo(carreraSel);return;}
   const asig=document.getElementById("na-asignatura").value.trim();
   if(!asig){alert("Ingrese el nombre de la asignatura.");return;}
   const sel=Array.from(document.querySelectorAll('#na-evals input:checked')).map(c=>c.value);
@@ -1405,6 +1510,7 @@ function notificarAsignacion(u,aula,car){
 
 function abrirModalAula(aid){
   const a=getAula(aid);if(!a)return;
+  if(carreraBloqueada(a.carreraId)){avisoBloqueo(a.carreraId);return;}
   const asignados=a.evaluadoresIds.map(getUsuario).filter(Boolean);
   const disponibles=USUARIOS.filter(u=>u.perfil==="evaluador"&&u.activo&&!a.evaluadoresIds.includes(u.id));
   document.getElementById("modal-titulo").textContent="✏️ Aula: "+a.asignatura;
@@ -1414,7 +1520,7 @@ function abrirModalAula(aid){
     <div class="fg-item"><label>Docente responsable</label><input id="am-doc" value="${esc(a.docente||"")}"/></div>
   </div>
   <div class="fg2" style="margin-bottom:12px">
-    <div class="fg-item"><label>Carrera</label><select id="am-carrera">${CARRERAS.map(c=>`<option value="${c.id}"${c.id===a.carreraId?" selected":""}>${esc(c.nombre)}</option>`).join("")}</select></div>
+    <div class="fg-item"><label>Carrera</label><select id="am-carrera">${CARRERAS.filter(c=>!c.emitido).map(c=>`<option value="${c.id}"${c.id===a.carreraId?" selected":""}>${esc(c.nombre)}</option>`).join("")}</select></div>
     <div class="fg-item"><label>Fecha de evaluación</label><input type="date" id="am-fecha" value="${a.fechaEval}"/></div>
   </div>
   <div class="fg-item" style="margin-bottom:12px"><label>Link al aula evaluada</label><input id="am-link" value="${esc(a.link||"")}"/></div>
@@ -1445,6 +1551,7 @@ function abrirModalAula(aid){
 
 function guardarAula(aid){
   const a=getAula(aid);if(!a)return;
+  if(carreraBloqueada(a.carreraId)||carreraBloqueada(+document.getElementById("am-carrera").value)){avisoBloqueo(carreraBloqueada(a.carreraId)?a.carreraId:+document.getElementById("am-carrera").value);return;}
   const asig=document.getElementById("am-asig").value.trim();
   if(!asig){alert("La asignatura es obligatoria.");return;}
   a.asignatura=asig;
@@ -1457,6 +1564,7 @@ function guardarAula(aid){
 
 function quitarEvaluadorAula(aid,uid){
   const a=getAula(aid);if(!a)return;
+  if(carreraBloqueada(a.carreraId)){avisoBloqueo(a.carreraId);return;}
   if(!confirm("¿Quitar este evaluador del aula? Se perderá la valoración que haya cargado."))return;
   const i=a.evaluadoresIds.indexOf(uid);
   if(i<0)return;
@@ -1477,6 +1585,7 @@ function quitarEvaluadorAula(aid,uid){
 
 function agregarEvaluadorAula(aid){
   const a=getAula(aid);if(!a)return;
+  if(carreraBloqueada(a.carreraId)){avisoBloqueo(a.carreraId);return;}
   const sel=document.getElementById("am-add");
   if(!sel||!sel.value)return;
   if(a.evaluadoresIds.length>=3){alert("Máximo 3 evaluadores por aula.");return;}
@@ -1527,7 +1636,8 @@ function htmlEvaluacion(){
   </div>
 
   ${yaCerre?`<div class="alert al-ok">✅ Ya cerraste tu evaluación de esta aula. Se muestra en modo lectura.</div>`:""}
-  ${!esEval?`<div class="alert al-info">${usuarioActual.perfil==="coordinador"?"👁 Vista de solo lectura. Como coordinador/a no podés modificar lo que cargaron los evaluadores; tu tarea es el <strong>dictamen de la carrera</strong>.":"Vista de administrador: podés ver y corregir las tres columnas de evaluación."}</div>`:""}
+  ${carreraBloqueada(a.carreraId)?`<div class="alert al-ok"><span>🔒</span><div>La carrera tiene el dictamen emitido. Esta evaluación queda <strong>solo para consulta</strong>.</div></div>`:""}
+  ${!esEval&&!carreraBloqueada(a.carreraId)?`<div class="alert al-info">${usuarioActual.perfil==="coordinador"?"👁 Vista de solo lectura. Como coordinador/a no podés modificar lo que cargaron los evaluadores; tu tarea es el <strong>dictamen de la carrera</strong>.":"Vista de administrador: podés ver y corregir las tres columnas de evaluación."}</div>`:""}
   ${alertas.length?`<div class="alert al-warn"><span>⚠️</span><div><strong>Criterios críticos con promedio ≤ 2,5:</strong> ${alertas.map(c=>`${rotulo(c)} ${esc(c.label)}`).join(" · ")}<br/><span style="font-size:12px">Nota metodológica §6: un puntaje global alto no debe ocultar deficiencias en aspectos esenciales del aula.</span></div></div>`:""}
 
   <div class="eval-hdr">
@@ -1573,6 +1683,7 @@ function botonesEval(a){
     return`<button class="btn btn-ok" onclick="guardarParcial()" ${yaCerre?"disabled":""}>💾 Guardar avance</button>
       <button class="btn btn-warn" onclick="cerrarEvaluacion()" ${yaCerre?"disabled":""}>✅ Cerrar y enviar</button>`;
   }
+  if(carreraBloqueada(a.carreraId))return`<button class="btn btn-out" onclick="abrirDictamen(${a.carreraId})">🔒 Ver dictamen de la carrera</button>`;
   if(usuarioActual.perfil==="administrador")return`<button class="btn btn-ok" onclick="guardarParcial()">💾 Guardar correcciones</button>`;
   return`<button class="btn btn-out" onclick="abrirDictamen(${a.carreraId})">🏛 Ir al dictamen de la carrera</button>`;
 }
@@ -1629,7 +1740,7 @@ function renderCriterio(a,c){
     const cols=a.evaluadoresIds.map((uid,i)=>{
       const u=getUsuario(uid);
       const n=i+1;
-      const dis=usuarioActual.perfil==="coordinador";
+      const dis=usuarioActual.perfil==="coordinador"||carreraBloqueada(a.carreraId);
       const nv=nivelDe(r["e"+n]);
       return`<div class="ev3-col">
         <h6>Eval. ${n} – ${esc(u?u.nombre.split(",")[0]:"–")}${a.completadas[uid]?" ✓":""}</h6>
@@ -1702,6 +1813,7 @@ function renderNotas(){
 // ---------- edición ----------
 function setNivel(critId,idx,val){
   const a=getAula(aulaEvalId);if(!a)return;
+  if(carreraBloqueada(a.carreraId)){avisoBloqueo(a.carreraId);return;}
   if(!a.valoraciones[critId])a.valoraciones[critId]={e1:"",e2:"",e3:"",c1:"",c2:"",c3:""};
   const actual=a.valoraciones[critId]["e"+idx];
   // click sobre la tarjeta ya seleccionada la deselecciona
@@ -1717,12 +1829,14 @@ function setNivel(critId,idx,val){
 
 function setComentario(critId,idx,val){
   const a=getAula(aulaEvalId);if(!a)return;
+  if(carreraBloqueada(a.carreraId))return;
   if(!a.valoraciones[critId])a.valoraciones[critId]={e1:"",e2:"",e3:"",c1:"",c2:"",c3:""};
   a.valoraciones[critId]["c"+idx]=val;
 }
 
 function setObsGeneral(idx,val){
   const a=getAula(aulaEvalId);if(!a)return;
+  if(carreraBloqueada(a.carreraId))return;
   a.obsGenerales["o"+idx]=val;
 }
 
@@ -1833,17 +1947,29 @@ const OPCIONES_DICTAMEN=[
 
 function abrirDictamen(cid){
   const c=getCarrera(cid);if(!c)return;
-  const soloLectura=usuarioActual.perfil==="evaluador";
+  const emitido=c.emitido===true;
+  const puedeEditar=(usuarioActual.perfil==="coordinador"||usuarioActual.perfil==="administrador")&&!emitido;
+  const soloLectura=!puedeEditar;
   const k=consolidadoCarrera(cid);
   const as=aulasDe(cid);
-  const sinCerrar=as.filter(a=>estadoAula(a)!=="completada").length;
+  const req=requisitosDictamen(cid);
+
+  let aviso;
+  if(emitido){
+    aviso=`<div class="alert al-ok"><span>🔒</span><div><strong>Dictamen emitido</strong> el ${fmtFecha(c.fechaDictamen)} por ${esc(c.emitidoPor||"–")}. Queda bloqueado: solo para consulta e impresión.</div></div>`;
+  }else if(req.ok){
+    aviso=`<div class="alert al-ok"><span>✅</span><div>Las ${as.length} aula/s de la carrera tienen sus ${EVALUADORES_POR_AULA} evaluaciones cerradas. <strong>Ya se puede emitir el dictamen.</strong> Una vez emitido no se podrá modificar.</div></div>`;
+  }else{
+    aviso=`<div class="alert al-warn"><span>⏳</span><div><strong>Todavía no se puede emitir el dictamen.</strong> Se habilita cuando cada aula tenga a sus ${EVALUADORES_POR_AULA} evaluadores con la evaluación cerrada.${req.sinAulas?"<br/>La carrera no tiene aulas cargadas.":`<br/>Falta: ${req.pendientes.map(x=>`<strong>${esc(x.aula.asignatura)}</strong> (${x.motivo})`).join(" · ")}.`}${puedeEditar?"<br/>Mientras tanto podés ir guardando un borrador.":""}</div></div>`;
+  }
 
   const filasAulas=as.map(a=>{
     const p=puntajeAula(a);
     const al=alertasCriticas(a);
+    const cerradas=a.evaluadoresIds.filter(id=>a.completadas[id]===true).length;
     return`<tr>
       <td style="font-weight:600">${esc(a.asignatura)}</td>
-      <td>${badgeEstadoAula(estadoAula(a))}</td>
+      <td>${aulaLista(a)?'<span class="badge b-comp">✓ 3/3 cerradas</span>':`<span class="badge b-pend">${cerradas}/${EVALUADORES_POR_AULA} cerradas</span>`}</td>
       <td style="text-align:center;font-weight:700">${p.sinDatos?"–":p.puntos}</td>
       <td style="text-align:center;font-weight:700;color:${pctColor(p.pct)}">${p.sinDatos?"–":p.pct+" %"}</td>
       <td>${pillPuntaje(p)}</td>
@@ -1858,7 +1984,7 @@ function abrirDictamen(cid){
 
   document.getElementById("modal-titulo").textContent="🏛 Dictamen de carrera";
   document.getElementById("modal-cuerpo").innerHTML=`
-  ${sinCerrar>0?`<div class="alert al-warn"><span>⚠️</span><div>Hay <strong>${sinCerrar} aula/s</strong> sin cerrar por todos sus evaluadores. El consolidado es provisorio.</div></div>`:`<div class="alert al-ok">✅ Todas las aulas de la carrera tienen su evaluación cerrada.</div>`}
+  ${aviso}
 
   <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:16px">
     <div style="background:#E3F2FD;border-radius:10px;padding:14px;border-left:4px solid #1565C0">
@@ -1873,7 +1999,7 @@ function abrirDictamen(cid){
   </div>
 
   <div class="tbl-wrap" style="margin-bottom:18px"><table>
-    <thead><tr><th>Aula virtual</th><th>Estado</th><th style="text-align:center">Puntaje</th><th style="text-align:center">% logro</th><th>Valoración</th><th>Críticos</th></tr></thead>
+    <thead><tr><th>Aula virtual</th><th>Evaluaciones</th><th style="text-align:center">Puntaje</th><th style="text-align:center">% logro</th><th>Valoración</th><th>Críticos</th></tr></thead>
     <tbody>${filasAulas}</tbody></table></div>
 
   <div class="dict-box">
@@ -1889,44 +2015,68 @@ function abrirDictamen(cid){
         <textarea id="dict-recom" rows="4" ${soloLectura?"readonly":""} style="width:100%;padding:11px;border:1.5px solid #CFD8DC;border-radius:8px;font-size:13px;font-family:inherit;resize:vertical" placeholder="Detallar recomendaciones concretas por aula o transversales a la carrera...">${esc(c.recomendaciones)}</textarea>
       </div>
       <div class="firma-grid">
-        <div class="firma-item">Coordinador/a CEA: ___________________________<br/><span style="font-size:11px">Fecha: ${c.fechaDictamen?fmtFecha(c.fechaDictamen):"___________________"}</span></div>
+        <div class="firma-item">Coordinador/a CEA: ${emitido?esc(c.emitidoPor||""):"___________________________"}<br/><span style="font-size:11px">Fecha: ${emitido?fmtFecha(c.fechaDictamen):"___________________"}</span></div>
         <div class="firma-item">Sello / Aval institucional<br/><span style="font-size:11px">CEA – UTN</span></div>
       </div>
     </div>
   </div>
-  ${soloLectura?"":`<div style="margin-top:16px;display:flex;justify-content:flex-end;gap:10px" class="no-print">
+  <div style="margin-top:16px;display:flex;justify-content:flex-end;gap:10px;flex-wrap:wrap" class="no-print">
     <button class="btn btn-out" onclick="window.print()">🖨 Imprimir</button>
-    <button class="btn btn-ok" onclick="guardarDictamen(${c.id})">💾 Guardar dictamen</button>
-  </div>`}`;
+    ${puedeEditar?`<button class="btn btn-out" onclick="guardarBorrador(${c.id})">💾 Guardar borrador</button>
+    <button class="btn btn-ok" onclick="emitirDictamen(${c.id})" ${req.ok?"":`disabled title="Se habilita cuando todas las aulas tengan sus ${EVALUADORES_POR_AULA} evaluaciones cerradas"`}>🔒 Emitir dictamen final</button>`:""}
+  </div>`;
   document.getElementById("modal-global").style.display="flex";
 }
 
+// Elegir la valoración solo cambia el borrador: el estado de la carrera
+// (Aprobado, No aprobado, etc.) se fija recién al emitir.
 function selDictamen(cid,op,el){
   const c=getCarrera(cid);if(!c)return;
+  if(c.emitido){avisoBloqueo(cid);return;}
   c.dictamen=op;
-  const o=OPCIONES_DICTAMEN.find(x=>x.v===op);
-  c.estado=o?o.estado:"pendiente";
   document.querySelectorAll(".opcion-dict").forEach(d=>{d.classList.remove("sel");const i=d.querySelector("input");if(i)i.checked=false;});
   el.classList.add("sel");
   const inp=el.querySelector("input");if(inp)inp.checked=true;
 }
 
-function guardarDictamen(cid){
-  const c=getCarrera(cid);if(!c)return;
+function leerTextosDictamen(c){
   const f=document.getElementById("dict-fund"),r=document.getElementById("dict-recom");
   if(f)c.fundamentacion=f.value;
   if(r)c.recomendaciones=r.value;
-  if(!c.dictamen){alert("Seleccioná una valoración de dictamen antes de guardar.");return;}
+}
+
+function guardarBorrador(cid){
+  const c=getCarrera(cid);if(!c)return;
+  if(c.emitido){avisoBloqueo(cid);return;}
+  leerTextosDictamen(c);
+  closeModal();goto(paginaActual);
+  setTimeout(()=>alert("💾 Borrador guardado. Podés seguir editándolo hasta emitir el dictamen."),200);
+}
+
+function emitirDictamen(cid){
+  const c=getCarrera(cid);if(!c)return;
+  if(c.emitido){avisoBloqueo(cid);return;}
+  const req=requisitosDictamen(cid);
+  if(!req.ok){alert(`Todavía no se puede emitir: todas las aulas deben tener sus ${EVALUADORES_POR_AULA} evaluaciones cerradas.`);return;}
+  leerTextosDictamen(c);
+  if(!c.dictamen){alert("Seleccioná la valoración del dictamen.");return;}
+  if(!c.fundamentacion.trim()){alert("Escribí la fundamentación del dictamen antes de emitirlo.");return;}
+  if(!confirm(`¿Emitir el dictamen final de "${c.nombre}"?\n\nValoración: ${c.dictamen}\n\nUna vez emitido queda bloqueado: no se podrán modificar el dictamen, las evaluaciones ni las aulas de la carrera.`))return;
+
+  const o=OPCIONES_DICTAMEN.find(x=>x.v===c.dictamen);
+  c.estado=o?o.estado:"pendiente";
   c.fechaDictamen=new Date().toISOString().slice(0,10);
+  c.emitidoPor=usuarioActual.nombre;
+  c.emitido=true;
 
   const k=consolidadoCarrera(cid);
   USUARIOS.filter(u=>u.perfil==="administrador"&&u.activo).forEach(ad=>{
     simularMail(ad.mail,`CEA-UTN: dictamen emitido – ${c.nombre}`,
-      `Estimado/a ${ad.nombre},\n\n${usuarioActual.nombre} emitió el dictamen de la carrera:\n\n  Carrera: ${c.nombre}\n  Facultad: ${c.facultad}\n  Dictamen: ${c.dictamen}\n  Puntaje promedio de aulas: ${k.puntos} / ${PUNTAJE_MAXIMO} (${k.pct} %)\n  Valoración global: ${k.rango.label}\n\nCEA – UTN`);
+      `Estimado/a ${ad.nombre},\n\n${usuarioActual.nombre} emitió el dictamen de la carrera:\n\n  Carrera: ${c.nombre}\n  Facultad: ${c.facultad}\n  Dictamen: ${c.dictamen}\n  Puntaje promedio de aulas: ${k.puntos} / ${PUNTAJE_MAXIMO} (${k.pct} %)\n  Valoración global: ${k.rango.label}\n\nEl dictamen quedó bloqueado y disponible para consulta.\n\nCEA – UTN`);
   });
 
   closeModal();goto(paginaActual);
-  setTimeout(()=>alert("✅ Dictamen guardado y notificado a la administración."),200);
+  setTimeout(()=>alert("🔒 Dictamen emitido. Quedó bloqueado y disponible para consulta e impresión."),200);
 }
 
 // ============================================================
@@ -2188,11 +2338,11 @@ function rptDictamen(c){
         <div><span style="color:#78909C">Período:</span><br/><strong>${esc(c.periodo)}</strong></div>
         <div><span style="color:#78909C">% de logro promedio:</span><br/><strong style="font-size:19px;color:${pctColor(k.pct)}">${k.sinDatos?"–":k.pct+" %"}</strong> ${k.sinDatos?"":badgeRango(k.pct,k.rango)}</div>
       </div>
-      <div style="margin-bottom:16px"><div style="font-weight:700;font-size:14px;margin-bottom:8px">DICTAMEN:</div>${c.dictamen?opciones:'<div class="alert al-warn" style="margin:0">Aún no se emitió dictamen para esta carrera.</div>'}</div>
-      ${c.fundamentacion?`<div style="margin-bottom:16px"><div style="font-weight:700;font-size:14px;margin-bottom:7px">Fundamentación:</div><div style="background:#F8F9FA;padding:13px;border-radius:8px;font-size:13px;line-height:1.6;white-space:pre-line">${esc(c.fundamentacion)}</div></div>`:""}
-      ${c.recomendaciones?`<div style="margin-bottom:18px"><div style="font-weight:700;font-size:14px;margin-bottom:7px">Recomendaciones:</div><div style="background:#F8F9FA;padding:13px;border-radius:8px;font-size:13px;line-height:1.6;white-space:pre-line">${esc(c.recomendaciones)}</div></div>`:""}
+      <div style="margin-bottom:16px"><div style="font-weight:700;font-size:14px;margin-bottom:8px">DICTAMEN:</div>${c.emitido?opciones+`<div style="font-size:12px;color:#546E7A;margin-top:6px">🔒 Emitido el ${fmtFecha(c.fechaDictamen)} por ${esc(c.emitidoPor||"–")}.</div>`:'<div class="alert al-warn" style="margin:0">Aún no se emitió el dictamen de esta carrera.</div>'}</div>
+      ${c.emitido&&c.fundamentacion?`<div style="margin-bottom:16px"><div style="font-weight:700;font-size:14px;margin-bottom:7px">Fundamentación:</div><div style="background:#F8F9FA;padding:13px;border-radius:8px;font-size:13px;line-height:1.6;white-space:pre-line">${esc(c.fundamentacion)}</div></div>`:""}
+      ${c.emitido&&c.recomendaciones?`<div style="margin-bottom:18px"><div style="font-weight:700;font-size:14px;margin-bottom:7px">Recomendaciones:</div><div style="background:#F8F9FA;padding:13px;border-radius:8px;font-size:13px;line-height:1.6;white-space:pre-line">${esc(c.recomendaciones)}</div></div>`:""}
       <div class="firma-grid">
-        <div class="firma-item">Coordinador/a CEA<br/><span style="font-size:11px">Fecha: ${c.fechaDictamen?fmtFecha(c.fechaDictamen):"___________________"}</span></div>
+        <div class="firma-item">Coordinador/a CEA${c.emitido?": "+esc(c.emitidoPor||""):""}<br/><span style="font-size:11px">Fecha: ${c.emitido?fmtFecha(c.fechaDictamen):"___________________"}</span></div>
         <div class="firma-item">Aval institucional<br/><span style="font-size:11px">CEA – UTN</span></div>
       </div>
     </div>
@@ -2220,6 +2370,223 @@ function verMail(id){
     <div style="margin-top:14px;display:flex;justify-content:flex-end"><button class="btn btn-out" onclick="abrirReporte('mails')">← Volver al log</button></div>`;
 }
 
+
+// ============================================================
+// MÓDULO DE SEGUIMIENTO DE OBSERVACIONES
+// El coordinador elige qué observaciones de los evaluadores seguir y las
+// tilda como subsanadas cuando verifica la corrección en el aula.
+// El administrador lo ve en modo lectura; los evaluadores no acceden.
+// ============================================================
+function puedeSeguir(){return!!usuarioActual&&usuarioActual.perfil==="coordinador";}
+function hoyISO(){return new Date().toISOString().slice(0,10);}
+
+// Observaciones que se pueden seguir: solo de evaluaciones ya cerradas
+function observacionesAula(a){
+  const out=[];
+  a.evaluadoresIds.forEach((uid,i)=>{
+    if(a.completadas[uid]!==true)return;
+    const n=i+1;
+    CRITERIOS.forEach(c=>{
+      const r=a.valoraciones[c.id];
+      const t=r&&r["c"+n]?r["c"+n].trim():"";
+      if(t)out.push({clave:`${a.id}|${c.id}|${uid}`,aulaId:a.id,critId:c.id,uid,valor:r["e"+n]||"",texto:t});
+    });
+    const g=(a.obsGenerales["o"+n]||"").trim();
+    if(g)out.push({clave:`${a.id}|general|${uid}`,aulaId:a.id,critId:"general",uid,valor:"",texto:g});
+  });
+  return out;
+}
+function itemSeg(clave){return SEGUIMIENTO.find(s=>s.clave===clave)||null;}
+function rotuloCrit(critId){
+  if(critId==="general")return"Observación general";
+  const c=CRITERIOS.find(x=>x.id===critId);
+  return c?`${rotulo(c)} ${c.label}`:critId;
+}
+function colorCrit(critId){const c=CRITERIOS.find(x=>x.id===critId);return c?colorDim(c.dim):"#546E7A";}
+function resumenSeg(aulaIds){
+  const it=SEGUIMIENTO.filter(s=>aulaIds.includes(s.aulaId));
+  return{total:it.length,pend:it.filter(s=>s.estado==="pendiente").length,ok:it.filter(s=>s.estado==="subsanada").length};
+}
+
+function seguirObservacion(clave){
+  if(!puedeSeguir()||itemSeg(clave))return;
+  const aid=+clave.split("|")[0];
+  const o=observacionesAula(getAula(aid)).find(x=>x.clave===clave);if(!o)return;
+  SEGUIMIENTO.push({id:Math.max(0,...SEGUIMIENTO.map(s=>s.id))+1,clave,aulaId:o.aulaId,critId:o.critId,uid:o.uid,
+    valor:o.valor,texto:o.texto,fechaAlta:hoyISO(),altaPor:usuarioActual.nombre,
+    estado:"pendiente",fechaVerif:"",verifPor:"",nota:""});
+  renderPagina();
+}
+function dejarDeSeguir(id){
+  if(!puedeSeguir())return;
+  const s=SEGUIMIENTO.find(x=>x.id===id);if(!s)return;
+  if(!confirm("¿Quitar esta observación del seguimiento?"+(s.nota?"\nSe perderá la nota cargada.":"")))return;
+  SEGUIMIENTO=SEGUIMIENTO.filter(x=>x.id!==id);
+  renderPagina();
+}
+function marcarSubsanada(id,subsanada){
+  if(!puedeSeguir())return;
+  const s=SEGUIMIENTO.find(x=>x.id===id);if(!s)return;
+  s.estado=subsanada?"subsanada":"pendiente";
+  s.fechaVerif=subsanada?hoyISO():"";
+  s.verifPor=subsanada?usuarioActual.nombre:"";
+  renderPagina();
+}
+function setNotaSeg(id,val){
+  if(!puedeSeguir())return;
+  const s=SEGUIMIENTO.find(x=>x.id===id);if(s)s.nota=val;
+}
+function cambiarSeg(campo,val){
+  if(campo==="vista")segVista=val;
+  if(campo==="carrera")segCarrera=val;
+  if(campo==="estado")segEstado=val;
+  renderPagina();
+}
+
+function htmlSeguimiento(){
+  const edita=puedeSeguir();
+  const carreras=segCarrera==="todas"?CARRERAS:CARRERAS.filter(c=>String(c.id)===segCarrera);
+  const aulaIds=AULAS.filter(a=>carreras.some(c=>c.id===a.carreraId)).map(a=>a.id);
+  const r=resumenSeg(aulaIds);
+  const pct=r.total?Math.round(r.ok/r.total*100):0;
+  const btnVista=(v,l)=>`<button class="btn btn-sm ${segVista===v?"btn-prim":"btn-out"}" onclick="cambiarSeg('vista','${v}')">${l}</button>`;
+  return`
+  <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:18px;gap:14px;flex-wrap:wrap">
+    <div>
+      <h2 style="font-size:21px;font-weight:700;color:#003087">Seguimiento de observaciones</h2>
+      <p style="color:#78909C;margin-top:2px">El coordinador elige qué observaciones de los evaluadores seguir y verifica si se subsanaron en el aula.</p>
+    </div>
+    <select onchange="cambiarSeg('carrera',this.value)" style="padding:8px 12px;border:1.5px solid #CFD8DC;border-radius:7px;font-size:13px;font-family:inherit">
+      <option value="todas"${segCarrera==="todas"?" selected":""}>Todas las carreras</option>
+      ${CARRERAS.map(c=>`<option value="${c.id}"${segCarrera===String(c.id)?" selected":""}>${esc(c.nombre)}</option>`).join("")}
+    </select>
+  </div>
+  ${edita?"":`<div class="alert al-info"><span>👁</span><div>Vista de solo lectura. El seguimiento lo realizan los coordinadores.</div></div>`}
+  <div class="stats-grid">
+    <div class="stat-card blue"><div class="s-lbl">En seguimiento</div><div class="s-val">${r.total}</div><div class="s-sub">Observaciones elegidas</div></div>
+    <div class="stat-card amber"><div class="s-lbl">Pendientes</div><div class="s-val">${r.pend}</div><div class="s-sub">Sin subsanar</div></div>
+    <div class="stat-card green"><div class="s-lbl">Subsanadas</div><div class="s-val">${r.ok}</div><div class="s-sub">Verificadas en el aula</div></div>
+    <div class="stat-card teal"><div class="s-lbl">Avance</div><div class="s-val">${pct} %</div>${barra(pct,"#00695C")}</div>
+  </div>
+  <div style="display:flex;gap:8px;margin-bottom:16px;flex-wrap:wrap">
+    ${btnVista("seguimiento",`📌 En seguimiento (${r.total})`)}
+    ${btnVista("agregar",edita?"➕ Elegir observaciones":"📄 Observaciones de los evaluadores")}
+  </div>
+  ${segVista==="seguimiento"?htmlSegLista(carreras,edita):htmlSegAgregar(carreras,edita)}`;
+}
+
+// Vista 1: las observaciones elegidas, con su tilde de "Subsanada"
+function htmlSegLista(carreras,edita){
+  const filtros=[["pendiente","Pendientes"],["subsanada","Subsanadas"],["todas","Todas"]]
+    .map(([v,l])=>`<button class="btn btn-sm ${segEstado===v?"btn-prim":"btn-out"}" onclick="cambiarSeg('estado','${v}')">${l}</button>`).join("");
+  const bloques=carreras.map(c=>{
+    const porAula=aulasDe(c.id).map(a=>{
+      const items=SEGUIMIENTO.filter(s=>s.aulaId===a.id&&(segEstado==="todas"||s.estado===segEstado));
+      if(!items.length)return"";
+      return`<div class="seg-aula">💻 ${esc(a.asignatura)}</div>`+items.map(s=>{
+        const u=getUsuario(s.uid);
+        const ok=s.estado==="subsanada";
+        return`<div class="seg-item${ok?" ok":""}">
+          <label class="seg-check"><input type="checkbox"${ok?" checked":""}${edita?"":" disabled"} onchange="marcarSubsanada(${s.id},this.checked)"/>${ok?"Subsanada":"Pendiente"}</label>
+          <div class="seg-cuerpo">
+            <div class="seg-crit"><span style="color:${colorCrit(s.critId)}">${esc(rotuloCrit(s.critId))}</span>${s.valor?badgeNivel(s.valor):""}</div>
+            <div class="seg-texto">“${esc(s.texto)}”</div>
+            <div class="seg-meta">Observó: <strong>${esc(u?u.nombre:"–")}</strong> · En seguimiento desde ${fmtFecha(s.fechaAlta)} (${esc(s.altaPor)})${ok?` · <span style="color:#2E7D32;font-weight:700">✓ Verificada el ${fmtFecha(s.fechaVerif)} por ${esc(s.verifPor)}</span>`:""}</div>
+            <textarea class="seg-nota"${edita?"":" disabled"} placeholder="Notas del seguimiento: qué se pidió, qué se verificó…" onchange="setNotaSeg(${s.id},this.value)">${esc(s.nota)}</textarea>
+          </div>
+          ${edita?`<button class="btn btn-sm btn-out no-print" title="Quitar del seguimiento" onclick="dejarDeSeguir(${s.id})">✖</button>`:""}
+        </div>`;}).join("");
+    }).join("");
+    if(!porAula)return"";
+    return`<div class="card"><div class="card-hdr"><h4>🎓 ${esc(c.nombre)}</h4>${celdaDictamen(c)}</div><div class="card-body" style="padding-top:4px">${porAula}</div></div>`;
+  }).join("");
+  const vacio=segEstado==="pendiente"?"No hay observaciones pendientes en esta selección."
+    :segEstado==="subsanada"?"Todavía no hay observaciones subsanadas en esta selección."
+    :`No hay observaciones en seguimiento.${edita?" Usá <strong>Elegir observaciones</strong> para sumarlas.":""}`;
+  return`<div style="display:flex;gap:8px;margin-bottom:14px">${filtros}</div>${bloques||`<div class="alert al-info"><span>ℹ️</span><div>${vacio}</div></div>`}`;
+}
+
+// Vista 2: todas las observaciones de evaluaciones cerradas, para elegir cuáles seguir
+function htmlSegAgregar(carreras,edita){
+  const bloques=carreras.map(c=>{
+    const porAula=aulasDe(c.id).map(a=>{
+      const obs=observacionesAula(a);
+      if(!obs.length)return"";
+      const seguidas=obs.filter(o=>itemSeg(o.clave)).length;
+      return`<div class="seg-aula">💻 ${esc(a.asignatura)} <span class="pill">${obs.length} observaciones · ${seguidas} en seguimiento</span></div>`+obs.map(o=>{
+        const u=getUsuario(o.uid);
+        const ya=itemSeg(o.clave);
+        const baja=o.valor&&+o.valor<=2;
+        return`<div class="seg-item"${ya?' style="opacity:.6"':""}>
+          <div class="seg-cuerpo">
+            <div class="seg-crit"><span style="color:${colorCrit(o.critId)}">${esc(rotuloCrit(o.critId))}</span>${o.valor?badgeNivel(o.valor):""}${baja?'<span class="badge b-crit">Valoración baja</span>':""}</div>
+            <div class="seg-texto">“${esc(o.texto)}”</div>
+            <div class="seg-meta">Observó: <strong>${esc(u?u.nombre:"–")}</strong></div>
+          </div>
+          ${ya?'<span class="badge b-comp" style="white-space:nowrap">✓ En seguimiento</span>'
+             :edita?`<button class="btn btn-sm btn-prim" style="white-space:nowrap" onclick="seguirObservacion('${o.clave}')">➕ Seguir</button>`:""}
+        </div>`;}).join("");
+    }).join("");
+    if(!porAula)return"";
+    return`<div class="card"><div class="card-hdr"><h4>🎓 ${esc(c.nombre)}</h4>${celdaDictamen(c)}</div><div class="card-body" style="padding-top:4px">${porAula}</div></div>`;
+  }).join("");
+  return`<div class="alert al-info"><span>ℹ️</span><div>Se listan las observaciones de las <strong>evaluaciones ya cerradas</strong>. Las marcadas con <em>Valoración baja</em> corresponden a criterios valorados con 1 o 2 por ese evaluador.</div></div>
+  ${bloques||'<div class="alert al-warn"><span>⏳</span><div>Todavía no hay evaluaciones cerradas con observaciones en esta selección.</div></div>'}`;
+}
+
+// ============================================================
+// MÓDULO DE CONTINUIDAD (planteado, todavía no está en uso)
+// Va a registrar qué carreras continúan en vigencia una vez evaluadas y
+// gestionar la renovación de su evaluación.
+// ============================================================
+function htmlContinuidad(){
+  const conDictamen=CARRERAS.filter(c=>c.emitido);
+  const filas=conDictamen.map(c=>{
+    const r=resumenSeg(aulasDe(c.id).map(a=>a.id));
+    return`<tr>
+      <td style="font-weight:600">${esc(c.nombre)}</td>
+      <td style="font-size:12px;color:#546E7A">${esc(c.facultad)}</td>
+      <td>${badgeDictamen(c.estado)}</td>
+      <td style="font-size:12px">${fmtFecha(c.fechaDictamen)}</td>
+      <td style="font-size:12px">${r.total?`${r.pend} pendiente/s de ${r.total}`:'<span style="color:#B0BEC5">sin seguimiento</span>'}</td>
+      <td><span class="pill">A definir</span></td>
+    </tr>`;}).join("");
+  return`
+  <div style="margin-bottom:18px">
+    <h2 style="font-size:21px;font-weight:700;color:#003087">Continuidad de carreras</h2>
+    <p style="color:#78909C;margin-top:2px">Carreras que continúan en vigencia y renovación de su evaluación</p>
+  </div>
+  <div class="alert al-warn"><span>🚧</span><div><strong>Módulo planteado, todavía no está en uso.</strong> Queda reservado en el sistema para cuando se defina el circuito de continuidad.</div></div>
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:18px">
+    <div class="card">
+      <div class="card-hdr"><h4>🎯 Para qué va a servir</h4></div>
+      <div class="card-body" style="font-size:13px;line-height:1.7;color:#455A64">
+        <ul style="padding-left:18px">
+          <li>Registrar las carreras que <strong>continúan en vigencia</strong> una vez terminada su evaluación.</li>
+          <li>Gestionar la <strong>renovación de la evaluación</strong> cuando corresponda.</li>
+          <li>Tomar como punto de partida el dictamen emitido y el estado del seguimiento de observaciones.</li>
+        </ul>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-hdr"><h4>❓ Falta definir</h4></div>
+      <div class="card-body" style="font-size:13px;line-height:1.7;color:#455A64">
+        <ul style="padding-left:18px">
+          <li>Cuánto dura la vigencia de un dictamen y cuándo vence.</li>
+          <li>Quién inicia la renovación y con qué aviso previo.</li>
+          <li>Si la renovación vuelve a evaluar todas las aulas o solo las que tuvieron observaciones.</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+  <div class="card">
+    <div class="card-hdr"><h4>🔒 Carreras con dictamen emitido</h4><span class="pill">${conDictamen.length}</span></div>
+    ${conDictamen.length?`<div class="tbl-wrap"><table>
+      <thead><tr><th>Carrera</th><th>Facultad</th><th>Dictamen</th><th>Emitido</th><th>Seguimiento</th><th>Continuidad</th></tr></thead>
+      <tbody>${filas}</tbody></table></div>`
+      :`<div class="card-body"><div class="alert al-info" style="margin:0"><span>ℹ️</span><div>Todavía no hay carreras con dictamen emitido. Van a aparecer acá como base para la continuidad.</div></div></div>`}
+  </div>`;
+}
 
 // ============================================================
 // DOCUMENTACIÓN DE USO DEL SISTEMA (visible para todos los perfiles)
@@ -2426,7 +2793,7 @@ function toggleActivo(uid){
 function modalEvaluador(uid){
   const u=getUsuario(uid);if(!u)return;
   const asignadas=AULAS.filter(a=>a.evaluadoresIds.includes(u.id));
-  const libres=AULAS.filter(a=>!a.evaluadoresIds.includes(u.id)&&a.evaluadoresIds.length<3);
+  const libres=AULAS.filter(a=>!a.evaluadoresIds.includes(u.id)&&a.evaluadoresIds.length<3&&!carreraBloqueada(a.carreraId));
   document.getElementById("modal-titulo").textContent="✏️ "+u.nombre;
   document.getElementById("modal-cuerpo").innerHTML=`
   <div class="fg2" style="margin-bottom:16px">
@@ -2458,6 +2825,7 @@ function asignarAula(uid){
   if(!sel||!sel.value)return;
   const a=getAula(+sel.value),u=getUsuario(uid);
   if(!a||!u)return;
+  if(carreraBloqueada(a.carreraId)){avisoBloqueo(a.carreraId);return;}
   if(a.evaluadoresIds.length>=3){alert("Ese aula ya tiene 3 evaluadores.");return;}
   a.evaluadoresIds.push(uid);
   a.completadas[uid]=false;

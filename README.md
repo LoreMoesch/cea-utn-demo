@@ -20,10 +20,18 @@ Para publicar un documento nuevo: copiar el archivo en la carpeta `docs/` y agre
 
 | Versión | Link | Instrumento |
 |---|---|---|
-| **v5 (actual)** | [/](https://loremoesch.github.io/cea-utn-demo/) | Rúbrica de Evaluación de Aulas Virtuales en Carreras en Proceso de Implementación — **CEA 2026 VF2** |
+| **v5 (actual)** | [/](https://loremoesch.github.io/cea-utn-demo/) | Rúbrica de Evaluación de Aulas Virtuales en Carreras en Proceso de Implementación — **SEAV 2026** |
 | v4 (anterior) | [/v4.html](https://loremoesch.github.io/cea-utn-demo/v4.html) | Evaluación de carreras — 6 criterios / 27 indicadores, escala 1 a 4 |
 
-## Instrumento vigente (VF2)
+## Circuito de trabajo
+
+1. **Evaluación.** Cada aula virtual tiene 3 evaluadores. Cada uno valora los 13 criterios, escribe sus observaciones y cierra su evaluación.
+2. **Dictamen.** El coordinador controla el avance. El dictamen de una carrera se puede emitir **solo cuando todas sus aulas tienen a sus 3 evaluadores con la evaluación cerrada**. Mientras tanto se puede guardar un borrador.
+3. **Bloqueo.** Al emitirse, el dictamen queda **bloqueado**: el dictamen, las evaluaciones y las aulas de esa carrera pasan a ser solo de consulta e impresión, incluso para el administrador.
+4. **Seguimiento.** El coordinador elige qué observaciones de los evaluadores seguir y las tilda como **subsanadas** cuando verifica la corrección en el aula, con fecha, responsable y notas. El administrador lo ve en modo lectura.
+5. **Continuidad.** Módulo planteado para las carreras que continúan en vigencia y la renovación de su evaluación. **Todavía no está en uso.**
+
+## Instrumento vigente (SEAV 2026)
 
 La unidad de evaluación es **el aula virtual de cada asignatura**. Las carreras agrupan sus aulas y el coordinador emite el dictamen a nivel carrera.
 
