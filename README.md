@@ -25,11 +25,17 @@ Para publicar un documento nuevo: copiar el archivo en la carpeta `docs/` y agre
 
 ## Circuito de trabajo
 
-1. **Evaluación.** Cada aula virtual tiene 3 evaluadores. Cada uno valora los 13 criterios, escribe sus observaciones y cierra su evaluación.
-2. **Dictamen.** El coordinador controla el avance. El dictamen de una carrera se puede emitir **solo cuando todas sus aulas tienen a sus 3 evaluadores con la evaluación cerrada**. Mientras tanto se puede guardar un borrador.
-3. **Bloqueo.** Al emitirse, el dictamen queda **bloqueado**: el dictamen, las evaluaciones y las aulas de esa carrera pasan a ser solo de consulta e impresión, incluso para el administrador.
-4. **Seguimiento.** El coordinador elige qué observaciones de los evaluadores seguir y las tilda como **subsanadas** cuando verifica la corrección en el aula, con fecha, responsable y notas. El administrador lo ve en modo lectura.
-5. **Continuidad.** Módulo planteado para las carreras que continúan en vigencia y la renovación de su evaluación. **Todavía no está en uso.**
+**Perfiles.** El **administrador** puede hacer todo y además ve **Seguridad**. El **coordinador** da de alta carreras, aulas y evaluadores, arma el equipo evaluador de cada carrera, emite el dictamen y verifica las subsanaciones. El **evaluador** completa la rúbrica.
+
+1. **Equipo.** Cada carrera tiene hasta **3 evaluadores**, y cada aula la evalúan los tres. El equipo puede cambiar con el tiempo: al reemplazar a alguien, lo que ya cerró se conserva con su autoría.
+2. **Evaluación.** Cada evaluador valora los 13 criterios y cierra. Si algún criterio tiene **2 o menos**, la evaluación queda **con observaciones** de forma automática; el evaluador también puede marcarla a mano, indicando el motivo.
+3. **Dictamen.** Se emite cuando todas las aulas tienen sus 3 evaluaciones **cerradas**, aunque tengan observaciones. Una vez emitido queda **bloqueado**.
+4. **Subsanación.** Una evaluación con observaciones abre una **revisión** a cargo de quien la hizo; el coordinador puede asignarla a otra persona (si es alguien de fuera del equipo, reemplaza a quien evaluó, para no pasar de 3). **La evaluación original nunca se modifica**: la revisión se hace aparte y queda el antes y el después. El revisor la reenvía y el coordinador la **verifica**: subsanada, parcialmente subsanada (vuelve a revisión) o devuelta.
+5. **Reapertura.** El coordinador puede reabrir cualquier evaluación cerrada indicando el motivo; funciona igual que una revisión.
+6. **Después del dictamen.** Las subsanaciones siguen. El dictamen no cambia: muestra un aviso de las subsanaciones posteriores. Cómo se registran (nota, anexo u otro) **está pendiente de definición**.
+7. **Avisos por mail.** Al coordinador y al administrador en cada paso (cierre, revisión asignada, reenvío, verificación, devolución), y al revisor cuando corresponde.
+8. **Seguridad** (solo administrador): auditoría de acciones, usuarios y perfiles, registro de accesos con bloqueo tras intentos fallidos, y política de contraseñas, con cambio obligatorio en el primer ingreso.
+9. **Continuidad.** Módulo planteado para las carreras que continúan en vigencia. **Todavía no está en uso.**
 
 ## Instrumento vigente (SEAV 2026)
 

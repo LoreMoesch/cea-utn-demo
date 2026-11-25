@@ -332,6 +332,7 @@ canvas{max-width:100%}
       <button class="nav-item" id="nav-documentacion" onclick="goto('documentacion')">📚 Documentación de uso del Sistema</button>
       <button class="nav-item" id="nav-evaluadores" onclick="goto('evaluadores')">👥 Evaluadores</button>
       <button class="nav-item" id="nav-admin" onclick="goto('admin')">⚙️ Administración</button>
+      <button class="nav-item" id="nav-seguridad" onclick="goto('seguridad')">🛡 Seguridad</button>
       <div class="nav-sec">Escala de valoración</div>
       <div class="escala-mini" id="sb-escala"></div>
     </div>
@@ -784,26 +785,6 @@ let AULAS=[
   },
 ];
 
-// ============================================================
-// SEGUIMIENTO DE OBSERVACIONES (lo realizan los coordinadores)
-// Cada ítem es una observación de un evaluador que el coordinador eligió
-// seguir. Se guarda una copia del texto y la valoración al momento de elegirla.
-// clave = aulaId|criterioId|evaluadorId  (criterioId "general" = obs. general)
-// ============================================================
-let SEGUIMIENTO=[
-  {id:1, clave:"101|c11_accesibilidad|u5", aulaId:101, critId:"c11_accesibilidad", uid:"u5", valor:"2",
-   texto:"Se detectan materiales escaneados sin capa de texto que impiden la lectura por lector de pantalla.",
-   fechaAlta:"2026-05-02", altaPor:"Yanina", estado:"pendiente", fechaVerif:"", verifPor:"",
-   nota:"Se pidió al docente reemplazar los escaneos por versiones accesibles antes del segundo cuatrimestre."},
-  {id:2, clave:"101|c01_diseno|u4", aulaId:101, critId:"c01_diseno", uid:"u4", valor:"4",
-   texto:"Buena organización general. Se detectaron dos enlaces rotos en la Unidad 3 (material complementario).",
-   fechaAlta:"2026-05-02", altaPor:"Yanina", estado:"subsanada", fechaVerif:"2026-06-10", verifPor:"Yanina",
-   nota:"Verificado en el aula: los dos enlaces fueron corregidos."},
-  {id:3, clave:"101|c07_evaluacion|u5", aulaId:101, critId:"c07_evaluacion", uid:"u5", valor:"3",
-   texto:"La evaluación es mayormente sumativa. No se identifican instancias diagnósticas.",
-   fechaAlta:"2026-05-02", altaPor:"Yanina", estado:"pendiente", fechaVerif:"", verifPor:"", nota:""},
-];
-let segVista="seguimiento", segCarrera="todas", segEstado="pendiente";
 
 // ============================================================
 // ESTADO DE LA APLICACIÓN
@@ -937,7 +918,7 @@ function requisitosDictamen(cid){
 function carreraBloqueada(cid){const c=getCarrera(cid);return!!(c&&c.emitido);}
 function avisoBloqueo(cid){
   const c=getCarrera(cid);
-  alert(`🔒 La carrera "${c?c.nombre:""}" ya tiene el dictamen emitido.\n\nSus aulas, evaluaciones y el dictamen quedan solo para consulta.`);
+  alert(`🔒 La carrera "${c?c.nombre:""}" ya tiene el dictamen emitido.\n\nEl dictamen, las aulas y las evaluaciones originales quedan solo para consulta. Las observaciones se siguen subsanando mediante revisiones desde Seguimiento.`);
 }
 
 function getUsuario(id){return USUARIOS.find(u=>u.id===id)||null;}
@@ -986,11 +967,26 @@ function doRecuperar(){
 function doLogin(){
   const dni=document.getElementById("inp-dni").value.trim();
   const pass=document.getElementById("inp-pass").value;
-  const found=USUARIOS.find(x=>x.dni===dni&&x.pass===pass&&x.activo);
-  if(!found){
-    const err=document.getElementById("login-error");
-    err.textContent="DNI o contraseña incorrectos.";err.style.display="block";return;
+  const err=document.getElementById("login-error");
+  const fallo=m=>{err.textContent=m;err.style.display="block";};
+  const found=USUARIOS.find(x=>x.dni===dni);
+  if(!found){registrarAcceso(dni,null,"dni_inexistente");return fallo("DNI o contraseña incorrectos.");}
+  if(found.bloqueado){registrarAcceso(dni,found,"bloqueada");return fallo("La cuenta está bloqueada por intentos fallidos. Comunicate con el administrador.");}
+  if(!found.activo){registrarAcceso(dni,found,"inactivo");return fallo("La cuenta está inactiva.");}
+  if(found.pass!==pass){
+    found.intentos=(found.intentos||0)+1;
+    if(found.intentos>=POLITICA.intentosBloqueo){
+      found.bloqueado=true;registrarAcceso(dni,found,"bloqueo");
+      USUARIOS.filter(u=>u.perfil==="administrador"&&u.activo).forEach(ad=>simularMail(ad.mail,"SEAV: cuenta bloqueada",
+        `Estimado/a ${ad.nombre},\n\nLa cuenta de ${found.nombre} (DNI ${found.dni}) se bloqueó tras ${POLITICA.intentosBloqueo} intentos fallidos de ingreso.\nPuede desbloquearla desde Seguridad → Usuarios y perfiles.\n\nSEAV – DGEDySIED`));
+      return fallo("La cuenta se bloqueó por intentos fallidos. Comunicate con el administrador.");
+    }
+    registrarAcceso(dni,found,"clave_incorrecta");
+    return fallo("DNI o contraseña incorrectos.");
   }
+  found.intentos=0;found.ultimoAcceso=new Date().toLocaleString("es-AR");
+  registrarAcceso(dni,found,"ok");
+  err.style.display="none";
   usuarioActual=found;
   document.getElementById("login-screen").style.display="none";
   document.getElementById("app-shell").style.display="flex";
@@ -1009,9 +1005,12 @@ function doLogin(){
 
   aplicarPermisosSidebar();
   goto(found.perfil==="evaluador"?"misevaluaciones":"dashboard");
+  if(found.debeCambiar)pedirCambioPassword("Es tu primer ingreso o tu contraseña fue blanqueada: definí una contraseña propia para continuar.");
+  else if(passVencida(found))pedirCambioPassword(`Tu contraseña venció (tiene más de ${POLITICA.vencimientoDias} días). Definí una nueva para continuar.`);
 }
 
 function doLogout(){
+  modalBloqueante=false;closeModal(true);
   usuarioActual=null;
   document.getElementById("login-screen").style.display="";
   document.getElementById("app-shell").style.display="none";
@@ -1034,8 +1033,9 @@ function aplicarPermisosSidebar(){
     continuidad:p!=="evaluador",
     archivos:true,
     documentacion:true,
-    evaluadores:p==="administrador",
+    evaluadores:p!=="evaluador",
     admin:p==="administrador",
+    seguridad:p==="administrador",
   };
   Object.entries(vis).forEach(([id,show])=>{
     const el=document.getElementById("nav-"+id);
@@ -1046,14 +1046,14 @@ function aplicarPermisosSidebar(){
 // ============================================================
 // NAVEGACIÓN
 // ============================================================
-const TITULOS={dashboard:"Inicio",carreras:"Carreras",aulas:"Aulas Virtuales",evaluacion:"Rúbrica de Evaluación del Aula Virtual",reportes:"Reportes y Análisis",archivos:"Gestión de Archivos",evaluadores:"Gestión de Evaluadores",admin:"Administración",misevaluaciones:"Mis Evaluaciones",documentacion:"Documentación de uso del Sistema",seguimiento:"Seguimiento de observaciones",continuidad:"Continuidad de carreras"};
+const TITULOS={dashboard:"Inicio",carreras:"Carreras",aulas:"Aulas Virtuales",evaluacion:"Rúbrica de Evaluación del Aula Virtual",reportes:"Reportes y Análisis",archivos:"Gestión de Archivos",evaluadores:"Gestión de Evaluadores",admin:"Administración",misevaluaciones:"Mis Evaluaciones",documentacion:"Documentación de uso del Sistema",seguimiento:"Seguimiento de observaciones",continuidad:"Continuidad de carreras",revision:"Revisión de evaluación",seguridad:"Seguridad"};
 
 function puedeAcceder(pag){
   const p=usuarioActual?.perfil;
   if(!p)return false;
   if(p==="administrador")return true;
-  if(p==="coordinador")return !["admin","evaluadores","misevaluaciones"].includes(pag);
-  if(p==="evaluador")return ["carreras","aulas","archivos","misevaluaciones","evaluacion","documentacion"].includes(pag);
+  if(p==="coordinador")return !["admin","seguridad","misevaluaciones"].includes(pag);
+  if(p==="evaluador")return ["carreras","aulas","archivos","misevaluaciones","evaluacion","documentacion","revision"].includes(pag);
   return false;
 }
 
@@ -1085,6 +1085,8 @@ function renderPagina(){
     case"reportes":c.innerHTML=htmlReportes();break;
     case"seguimiento":c.innerHTML=htmlSeguimiento();break;
     case"continuidad":c.innerHTML=htmlContinuidad();break;
+    case"revision":c.innerHTML=htmlRevision();break;
+    case"seguridad":c.innerHTML=htmlSeguridad();break;
     case"archivos":c.innerHTML=htmlArchivos();setTimeout(renderArchivos,50);break;
     case"documentacion":c.innerHTML=htmlDocumentacion();break;
     case"evaluadores":c.innerHTML=htmlEvaluadores();break;
@@ -1261,7 +1263,8 @@ function htmlCarreras(){
     const k=consolidadoCarrera(c.id);
     const prog=k.aulas?Math.round((k.completas/k.aulas)*100):0;
     let acciones=`<button class="btn btn-sm btn-out" onclick="verAulasDe(${c.id})">💻 Aulas (${k.aulas})</button>`;
-    if(esAdmin&&!c.emitido)acciones+=` <button class="btn btn-sm btn-prim" onclick="abrirModalCarrera(${c.id})">✏️</button>`;
+    if((esAdmin||esCoord)&&!c.emitido)acciones+=` <button class="btn btn-sm btn-prim" onclick="abrirModalCarrera(${c.id})">✏️</button>`;
+    if(esAdmin||esCoord)acciones+=` <button class="btn btn-sm btn-out" onclick="abrirEquipo(${c.id})">👥 Equipo (${equipoCarrera(c.id).length}/${MAX_EQUIPO})</button>`;
     if(esAdmin||esCoord)acciones+=` <button class="btn btn-sm btn-prim" onclick="abrirDictamen(${c.id})">${c.emitido?"🔒 Ver dictamen":"🏛 Dictamen"}</button>`;
     return`<tr>
       <td style="font-weight:600;max-width:220px">${esc(c.nombre)}</td>
@@ -1284,7 +1287,7 @@ function htmlCarreras(){
       <h2 style="font-size:21px;font-weight:700;color:#003087">Carreras en evaluación</h2>
       <p style="color:#78909C;margin-top:2px">Cada carrera agrupa las aulas virtuales de sus asignaturas. El % de logro de la carrera es el promedio de sus aulas evaluadas.</p>
     </div>
-    ${esAdmin?`<button class="btn btn-prim" onclick="toggleForm('form-nueva-carrera')">+ Nueva carrera</button>`:""}
+    ${esAdmin||esCoord?`<button class="btn btn-prim" onclick="toggleForm('form-nueva-carrera')">+ Nueva carrera</button>`:""}
   </div>
 
   <div id="form-nueva-carrera" style="display:none">
@@ -1330,6 +1333,7 @@ function crearCarrera(){
     periodo:document.getElementById("new-periodo").value.trim(),
     estado:"pendiente",dictamen:"",fundamentacion:"",recomendaciones:"",fechaDictamen:"",archivos:[]
   });
+  registrar("Dio de alta una carrera",n);
   goto("carreras");
 }
 
@@ -1371,7 +1375,8 @@ function guardarCarrera(cid){
 // AULAS VIRTUALES
 // ============================================================
 function htmlAulas(){
-  const esAdmin=usuarioActual.perfil==="administrador";
+  // "esAdmin" = puede gestionar aulas: administrador o coordinador
+  const esAdmin=usuarioActual.perfil==="administrador"||usuarioActual.perfil==="coordinador";
   const esEval=usuarioActual.perfil==="evaluador";
 
   let lista=AULAS.slice();
@@ -1484,6 +1489,7 @@ function crearAula(){
   if(!asig){alert("Ingrese el nombre de la asignatura.");return;}
   const sel=Array.from(document.querySelectorAll('#na-evals input:checked')).map(c=>c.value);
   if(!sel.length){alert("Seleccione al menos un evaluador.");return;}
+  if(excedeEquipo(carreraSel,sel)){alert(avisoEquipo(carreraSel));return;}
   const carreraId=+document.getElementById("na-carrera").value;
   const link=document.getElementById("na-link").value.trim();
   const fecha=document.getElementById("na-fecha").value;
@@ -1497,6 +1503,7 @@ function crearAula(){
   };
   AULAS.push(aula);
   const car=getCarrera(carreraId);
+  registrar("Dio de alta un aula",`${asig} (${car?car.nombre:""})`);
   sel.forEach(uid=>notificarAsignacion(getUsuario(uid),aula,car));
   toggleForm('form-nueva-aula');
   goto("aulas");
@@ -1565,9 +1572,11 @@ function guardarAula(aid){
 function quitarEvaluadorAula(aid,uid){
   const a=getAula(aid);if(!a)return;
   if(carreraBloqueada(a.carreraId)){avisoBloqueo(a.carreraId);return;}
-  if(!confirm("¿Quitar este evaluador del aula? Se perderá la valoración que haya cargado."))return;
   const i=a.evaluadoresIds.indexOf(uid);
   if(i<0)return;
+  if(cerradaPuesto(a,i)||((a.puestos||[])[i]&&a.puestos[i].historial.length)){
+    alert(`${nombreDe(uid)} ya cerró su evaluación de esta aula: no se puede quitar sin perderla.\n\nPara que otra persona continúe, usá "👥 Equipo" en Carreras y reemplazala. La evaluación cerrada se conserva.`);return;}
+  if(!confirm("¿Quitar este evaluador del aula? Se perderá el avance que haya cargado (todavía no cerró su evaluación)."))return;
   // Desplazar las columnas para mantener la correspondencia evaluador ↔ columna
   const orden=[1,2,3].filter(n=>n!==i+1);
   CRITERIOS.forEach(c=>{
@@ -1579,7 +1588,9 @@ function quitarEvaluadorAula(aid,uid){
   const obs=[1,2,3].filter(n=>n!==i+1).map(n=>a.obsGenerales["o"+n]);
   a.obsGenerales={o1:obs[0]||"",o2:obs[1]||"",o3:""};
   a.evaluadoresIds.splice(i,1);
+  if(a.puestos)a.puestos.splice(i,1);
   delete a.completadas[uid];
+  registrar("Quitó un evaluador de un aula",`${nombreDe(uid)} · ${a.asignatura}`);
   abrirModalAula(aid);
 }
 
@@ -1590,6 +1601,7 @@ function agregarEvaluadorAula(aid){
   if(!sel||!sel.value)return;
   if(a.evaluadoresIds.length>=3){alert("Máximo 3 evaluadores por aula.");return;}
   const u=getUsuario(sel.value);if(!u)return;
+  if(excedeEquipo(a.carreraId,[u.id])){alert(avisoEquipo(a.carreraId));return;}
   a.evaluadoresIds.push(u.id);
   a.completadas[u.id]=false;
   notificarAsignacion(u,a,getCarrera(a.carreraId));
@@ -1635,8 +1647,9 @@ function htmlEvaluacion(){
     </div>
   </div>
 
-  ${yaCerre?`<div class="alert al-ok">✅ Ya cerraste tu evaluación de esta aula. Se muestra en modo lectura.</div>`:""}
-  ${carreraBloqueada(a.carreraId)?`<div class="alert al-ok"><span>🔒</span><div>La carrera tiene el dictamen emitido. Esta evaluación queda <strong>solo para consulta</strong>.</div></div>`:""}
+  ${yaCerre?`<div class="alert al-ok">✅ Ya cerraste tu evaluación de esta aula (${badgeEstadoEval(estadoPuesto(a,idx-1),a,idx-1)}). La evaluación original se muestra en modo lectura.</div>`:""}
+  ${yaCerre&&puesto(a,idx-1).revision&&puesto(a,idx-1).revision.revisorId===usuarioActual.id?`<div class="alert al-warn"><span>🔁</span><div>Tenés una revisión abierta para subsanar las observaciones de esta evaluación. <button class="btn btn-sm btn-prim" onclick="abrirRevision(${a.id},${idx-1})">Ir a la revisión</button></div></div>`:""}
+  ${carreraBloqueada(a.carreraId)?`<div class="alert al-ok"><span>🔒</span><div>La carrera tiene el dictamen emitido. Las evaluaciones originales quedan <strong>solo para consulta</strong>; las observaciones se siguen subsanando mediante revisiones desde Seguimiento.</div></div>`:""}
   ${!esEval&&!carreraBloqueada(a.carreraId)?`<div class="alert al-info">${usuarioActual.perfil==="coordinador"?"👁 Vista de solo lectura. Como coordinador/a no podés modificar lo que cargaron los evaluadores; tu tarea es el <strong>dictamen de la carrera</strong>.":"Vista de administrador: podés ver y corregir las tres columnas de evaluación."}</div>`:""}
   ${alertas.length?`<div class="alert al-warn"><span>⚠️</span><div><strong>Criterios críticos con promedio ≤ 2,5:</strong> ${alertas.map(c=>`${rotulo(c)} ${esc(c.label)}`).join(" · ")}<br/><span style="font-size:12px">Nota metodológica §6: un puntaje global alto no debe ocultar deficiencias en aspectos esenciales del aula.</span></div></div>`:""}
 
@@ -1740,10 +1753,11 @@ function renderCriterio(a,c){
     const cols=a.evaluadoresIds.map((uid,i)=>{
       const u=getUsuario(uid);
       const n=i+1;
-      const dis=usuarioActual.perfil==="coordinador"||carreraBloqueada(a.carreraId);
+      const dis=usuarioActual.perfil==="coordinador"||carreraBloqueada(a.carreraId)||cerradaPuesto(a,i);
       const nv=nivelDe(r["e"+n]);
       return`<div class="ev3-col">
         <h6>Eval. ${n} – ${esc(u?u.nombre.split(",")[0]:"–")}${a.completadas[uid]?" ✓":""}</h6>
+        ${cerradaPuesto(a,i)?`<div style="margin-bottom:6px">${badgeEstadoEval(estadoPuesto(a,i),a,i)} <a href="#" onclick="abrirHistorial(${a.id},${i});return false" style="font-size:11px">historial</a></div>`:""}
         <select ${dis?"disabled":""} onchange="setNivel('${c.id}',${n},this.value)">${escalaOpts(r["e"+n])}</select>
         ${nv?`<div style="margin-bottom:6px">${badgeNivel(r["e"+n])}</div>`:""}
         <textarea ${dis?"disabled":""} placeholder="Observaciones..." onchange="setComentario('${c.id}',${n},this.value)">${esc(r["c"+n])}</textarea>
@@ -1811,9 +1825,16 @@ function renderNotas(){
 }
 
 // ---------- edición ----------
+// Una evaluación cerrada nunca se edita en forma directa: se corrige mediante una revisión.
+function puedeEditarColumna(a,n){
+  if(!usuarioActual||usuarioActual.perfil==="coordinador")return false;
+  if(usuarioActual.perfil==="evaluador"&&getEvalIdx(a)!==+n)return false;
+  return!cerradaPuesto(a,+n-1);
+}
 function setNivel(critId,idx,val){
   const a=getAula(aulaEvalId);if(!a)return;
   if(carreraBloqueada(a.carreraId)){avisoBloqueo(a.carreraId);return;}
+  if(!puedeEditarColumna(a,idx)){alert("Esa evaluación ya está cerrada o no está a tu cargo. Los cambios se hacen mediante una revisión desde Seguimiento.");return;}
   if(!a.valoraciones[critId])a.valoraciones[critId]={e1:"",e2:"",e3:"",c1:"",c2:"",c3:""};
   const actual=a.valoraciones[critId]["e"+idx];
   // click sobre la tarjeta ya seleccionada la deselecciona
@@ -1829,14 +1850,14 @@ function setNivel(critId,idx,val){
 
 function setComentario(critId,idx,val){
   const a=getAula(aulaEvalId);if(!a)return;
-  if(carreraBloqueada(a.carreraId))return;
+  if(carreraBloqueada(a.carreraId)||!puedeEditarColumna(a,idx))return;
   if(!a.valoraciones[critId])a.valoraciones[critId]={e1:"",e2:"",e3:"",c1:"",c2:"",c3:""};
   a.valoraciones[critId]["c"+idx]=val;
 }
 
 function setObsGeneral(idx,val){
   const a=getAula(aulaEvalId);if(!a)return;
-  if(carreraBloqueada(a.carreraId))return;
+  if(carreraBloqueada(a.carreraId)||!puedeEditarColumna(a,idx))return;
   a.obsGenerales["o"+idx]=val;
 }
 
@@ -1883,8 +1904,18 @@ function htmlVistaPrevia(a,idx){
       <span class="ind-val">${badgeNivel(v)}</span>
     </div>`;}).join("");
   const bajos=CRITERIOS.filter(c=>c.critico&&+a.valoraciones[c.id]["e"+idx]<=2);
+  const conObs=criteriosBajos(a,idx-1);
   return`
-  <div class="alert al-warn"><span>⚠️</span><div>Una vez confirmado <strong>no podrás modificar tu evaluación</strong>. Se notificará al coordinador y al administrador.</div></div>
+  <div class="alert al-warn"><span>⚠️</span><div>Una vez confirmada, <strong>la evaluación original no se modifica</strong>. Si tiene observaciones, queda abierta una revisión a tu cargo para subsanarlas (el coordinador puede asignarla a otra persona). Se notificará al coordinador y al administrador.</div></div>
+  <div class="preview-section" style="border-color:${conObs.length?"#FFAB91":"#E0E0E0"}">
+    <h5>¿La evaluación tiene observaciones?</h5>
+    <label style="display:flex;align-items:center;gap:9px;font-size:13px;font-weight:600;cursor:pointer">
+      <input type="checkbox" id="cierre-obs" ${conObs.length?"checked disabled":""} style="width:18px;height:18px"/>
+      La evaluación tiene observaciones a subsanar
+    </label>
+    <div style="font-size:12px;color:#78909C;margin:6px 0 8px">${conObs.length?`Marcada automáticamente: ${conObs.length} criterio/s con 2 o menos (${conObs.map(c=>c.nro).join(", ")}).`:"Ningún criterio tiene 2 o menos. Marcala si igualmente hay algo que el aula debe corregir."}</div>
+    <textarea id="cierre-motivo" placeholder="Qué debe subsanarse (obligatorio si la marcás a mano)…" style="width:100%;padding:8px 10px;border:1px solid #CFD8DC;border-radius:7px;font-size:12.5px;font-family:inherit;min-height:50px"></textarea>
+  </div>
   <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:16px">
     <div style="background:#E3F2FD;border-radius:10px;padding:14px;border-left:4px solid #1565C0">
       <div style="font-size:11px;color:#1565C0;font-weight:700">PUNTAJE OBTENIDO</div>
@@ -1913,26 +1944,31 @@ function htmlVistaPrevia(a,idx){
 
 function confirmarCierre(aid){
   const a=getAula(aid);if(!a)return;
-  const idx=getEvalIdx(a);
-  const p=puntajeEvaluador(a,idx);
-  const car=getCarrera(a.carreraId);
+  const idx=getEvalIdx(a);if(!idx)return;
+  if(a.completadas[usuarioActual.id]===true)return;
+  const k=idx-1,p=puntajeEvaluador(a,idx),car=getCarrera(a.carreraId);
+  const bajos=criteriosBajos(a,k);
+  const chk=document.getElementById("cierre-obs"),mot=document.getElementById("cierre-motivo");
+  const manual=!bajos.length&&!!(chk&&chk.checked);
+  const motivo=((mot&&mot.value)||"").trim();
+  if(manual&&!motivo){alert("Indicá qué debe subsanarse.");return;}
+  const tiene=bajos.length>0||manual;
+  const pu=puesto(a,k);
   a.completadas[usuarioActual.id]=true;
-
-  USUARIOS.filter(u=>(u.perfil==="coordinador"||u.perfil==="administrador")&&u.activo).forEach(dest=>{
-    simularMail(dest.mail,`CEA-UTN: evaluación cerrada – ${a.asignatura}`,
-      `Estimado/a ${dest.nombre},\n\n${usuarioActual.nombre} cerró la evaluación del aula virtual:\n\n  Asignatura: ${a.asignatura}\n  Carrera: ${car?car.nombre:"–"}\n\n  Puntaje: ${p.puntos} / ${PUNTAJE_MAXIMO}\n  Porcentaje de logro: ${p.pct} %\n  Valoración final: ${p.rango.label}\n\nEstado del aula: ${estadoAula(a)==="completada"?"todos los evaluadores cerraron su evaluación.":"restan evaluadores por cerrar."}\n\nCEA – UTN`);
-  });
-
-  if(estadoAula(a)==="completada"){
-    USUARIOS.filter(u=>u.perfil==="coordinador"&&u.activo).forEach(co=>{
-      simularMail(co.mail,`CEA-UTN: aula lista para dictamen – ${a.asignatura}`,
-        `Estimado/a ${co.nombre},\n\nTodos los evaluadores completaron la rúbrica del aula virtual "${a.asignatura}" (${car?car.nombre:"–"}).\n\nPuntaje consolidado: ${puntajeAula(a).puntos} / ${PUNTAJE_MAXIMO} (${puntajeAula(a).pct} %).\n\nPuede ingresar al sistema para revisar el consolidado y avanzar con el dictamen de la carrera.\n\nCEA – UTN`);
-    });
-  }
-
+  pu.autor=usuarioActual.id;pu.fechaCierre=hoyISO();
+  pu.obs={tiene,auto:bajos.length>0,manual,motivo,parcial:false};
+  evento(a,k,"Cierre",tiene?`Con observaciones${bajos.length?` (${bajos.length} criterio/s con 2 o menos)`:""}${motivo?" · "+motivo:""}`:"Sin observaciones");
+  if(tiene){
+    iniciarRevision(a,k,usuarioActual.id,"subsanacion","","(automático al cerrar)");
+    evento(a,k,"Revisión abierta",`A cargo de ${usuarioActual.nombre}, hasta que el coordinador indique otra cosa`);
+  }else pu.estado="cerrada";
+  registrar("Cerró una evaluación",etiquetaEval(a,k)+(tiene?" · con observaciones":" · sin observaciones"));
+  const listaCarrera=requisitosDictamen(a.carreraId).ok;
+  notificar([],`evaluación cerrada${tiene?" con observaciones":""} – ${a.asignatura}`,
+    `${usuarioActual.nombre} cerró la ${etiquetaEval(a,k)}.\n\n  Puntaje: ${p.puntos} / ${PUNTAJE_MAXIMO} (${p.pct} %) – ${p.rango.label}\n  Observaciones: ${tiene?"SÍ":"no"}${bajos.length?`\n  Criterios con 2 o menos: ${bajos.map(c=>rotulo(c)+" "+c.label).join("; ")}`:""}${motivo?`\n  Observación del evaluador: ${motivo}`:""}${tiene?`\n\nQuedó abierta una revisión a cargo de ${usuarioActual.nombre}. Podés reasignarla desde Seguimiento.`:""}${listaCarrera?`\n\nTodas las aulas de "${car?car.nombre:""}" tienen sus evaluaciones cerradas: ya se puede emitir el dictamen.`:""}`);
   closeModal();
   goto("misevaluaciones");
-  setTimeout(()=>alert(`✅ Evaluación enviada.\n\nPuntaje: ${p.puntos} / ${PUNTAJE_MAXIMO} — ${p.pct} % — ${p.rango.label}\n\nSe notificó al coordinador y al administrador.\n[SIMULACIÓN: ver Reportes → Log de notificaciones]`),250);
+  setTimeout(()=>alert(`✅ Evaluación enviada.\n\nPuntaje: ${p.puntos} / ${PUNTAJE_MAXIMO} — ${p.pct} % — ${p.rango.label}${tiene?"\n\nTiene observaciones: quedó abierta una revisión a tu cargo en Mis evaluaciones.":""}\n\nSe notificó al coordinador y al administrador.`),250);
 }
 
 
@@ -1956,7 +1992,9 @@ function abrirDictamen(cid){
 
   let aviso;
   if(emitido){
-    aviso=`<div class="alert al-ok"><span>🔒</span><div><strong>Dictamen emitido</strong> el ${fmtFecha(c.fechaDictamen)} por ${esc(c.emitidoPor||"–")}. Queda bloqueado: solo para consulta e impresión.</div></div>`;
+    const post=subsanacionesPosteriores(cid);
+    aviso=`<div class="alert al-ok"><span>🔒</span><div><strong>Dictamen emitido</strong> el ${fmtFecha(c.fechaDictamen)} por ${esc(c.emitidoPor||"–")}. Queda bloqueado: solo para consulta e impresión.</div></div>
+    ${post?`<div class="alert al-warn"><span>📝</span><div>Hubo <strong>${post} subsanación/es verificada/s después de emitido el dictamen</strong> (ver Seguimiento). El dictamen no se modifica; cómo se registra está pendiente de definición.</div></div>`:""}`;
   }else if(req.ok){
     aviso=`<div class="alert al-ok"><span>✅</span><div>Las ${as.length} aula/s de la carrera tienen sus ${EVALUADORES_POR_AULA} evaluaciones cerradas. <strong>Ya se puede emitir el dictamen.</strong> Una vez emitido no se podrá modificar.</div></div>`;
   }else{
@@ -2068,6 +2106,7 @@ function emitirDictamen(cid){
   c.fechaDictamen=new Date().toISOString().slice(0,10);
   c.emitidoPor=usuarioActual.nombre;
   c.emitido=true;
+  registrar("Emitió un dictamen",`${c.nombre} · ${c.dictamen}`);
 
   const k=consolidadoCarrera(cid);
   USUARIOS.filter(u=>u.perfil==="administrador"&&u.activo).forEach(ad=>{
@@ -2087,6 +2126,8 @@ function htmlMisEvaluaciones(){
   const cerradas=mias.filter(a=>a.completadas[usuarioActual.id]===true);
   const abiertas=mias.filter(a=>a.completadas[usuarioActual.id]!==true);
 
+  const revisiones=[];
+  AULAS.forEach(a=>(a.puestos||[]).forEach((pu,k)=>{if(pu&&pu.revision&&pu.revision.revisorId===usuarioActual.id)revisiones.push({a,k,pu});}));
   const fila=(a,cerrada)=>{
     const car=getCarrera(a.carreraId);
     const idx=getEvalIdx(a);
@@ -2096,7 +2137,7 @@ function htmlMisEvaluaciones(){
       <td><div style="font-weight:600">${esc(a.asignatura)}</div><div style="font-size:11px;color:#90A4AE">${esc(car?car.nombre:"")}</div></td>
       <td style="font-size:12px;color:#546E7A">${esc(car?car.facultad:"–")}</td>
       <td style="font-size:12px;color:#546E7A">${fmtFecha(a.fechaEval)}</td>
-      <td style="min-width:110px">${cerrada?'<span class="badge b-comp">✓ Cerrada</span>':`<div style="font-size:10.5px;color:#78909C;margin-bottom:3px">${prog}%</div>${barra(prog,prog>0?"#1565C0":"#B0BEC5")}`}</td>
+      <td style="min-width:110px">${cerrada?badgeEstadoEval(estadoPuesto(a,idx-1),a,idx-1):`<div style="font-size:10.5px;color:#78909C;margin-bottom:3px">${prog}%</div>${barra(prog,prog>0?"#1565C0":"#B0BEC5")}`}</td>
       <td style="text-align:center;font-weight:700">${p.cargados?p.puntos+" / "+PUNTAJE_MAXIMO:"–"}</td>
       <td style="text-align:center;font-weight:700;color:${pctColor(p.pct)}">${cerrada?p.pct+" %":"–"}</td>
       <td>${cerrada?badgeRango(p.pct,p.rango):'<span class="pill">En curso</span>'}</td>
@@ -2116,6 +2157,19 @@ function htmlMisEvaluaciones(){
   </div>
 
   ${!mias.length?`<div class="alert al-info">Todavía no tenés aulas virtuales asignadas.</div>`:""}
+
+  ${revisiones.length?`<div class="card" style="border:1.5px solid #FFCC80">
+    <div class="card-hdr"><h4>🔁 Revisiones a mi cargo</h4><span class="pill">${revisiones.length}</span></div>
+    <div class="tbl-wrap"><table><thead><tr><th>Aula virtual</th><th>Evaluación</th><th>Motivo</th><th>Estado</th><th>Acción</th></tr></thead><tbody>
+    ${revisiones.map(({a,k,pu})=>{const car=getCarrera(a.carreraId),r=pu.revision,dev=r.devoluciones.length&&r.estado==="en_revision";
+      return`<tr>
+        <td><div style="font-weight:600">${esc(a.asignatura)}</div><div style="font-size:11px;color:#90A4AE">${esc(car?car.nombre:"")}</div></td>
+        <td style="font-size:12px">Evaluación ${k+1} · evaluó ${esc(nombreDe(pu.autor))}</td>
+        <td style="font-size:12px">${r.motivo==="reapertura"?"Reapertura":"Subsanar observaciones"}</td>
+        <td>${r.estado==="reenviada"?'<span class="badge b-pend">Enviada · para verificar</span>':dev?'<span class="badge b2">↩ Devuelta</span>':'<span class="badge b-curso">Pendiente</span>'}</td>
+        <td><button class="btn btn-sm ${r.estado==="reenviada"?"btn-out":"btn-prim"}" onclick="abrirRevision(${a.id},${k})">${r.estado==="reenviada"?"👁 Ver":"✏️ Revisar"}</button></td>
+      </tr>`;}).join("")}
+    </tbody></table></div></div>`:""}
 
   ${abiertas.length?`<div class="card">
     <div class="card-hdr"><h4>🕐 Pendientes</h4><span class="pill">${abiertas.length}</span></div>
@@ -2372,166 +2426,745 @@ function verMail(id){
 
 
 // ============================================================
-// MÓDULO DE SEGUIMIENTO DE OBSERVACIONES
-// El coordinador elige qué observaciones de los evaluadores seguir y las
-// tilda como subsanadas cuando verifica la corrección en el aula.
-// El administrador lo ve en modo lectura; los evaluadores no acceden.
+// CIRCUITO DE OBSERVACIONES, REVISIONES Y VERIFICACIÓN
+// Cada aula tiene hasta 3 evaluaciones ("puestos"), una por evaluador.
+// - Al cerrar, una evaluación queda "con observaciones" si algún criterio
+//   tiene 2 o menos (automático) o si el evaluador la marca a mano.
+// - La evaluación original NUNCA se modifica: la subsanación, o la
+//   reapertura que pida el coordinador, se hace en una REVISIÓN aparte.
+// - El coordinador asigna el revisor y, cuando la revisión vuelve,
+//   la verifica: subsanada, parcialmente subsanada o devuelta.
+// - Al verificarse, los valores revisados pasan a ser los vigentes del
+//   aula; la evaluación original queda en el historial.
+// - Tope: una carrera nunca tiene más de 3 evaluadores. Si el revisor es
+//   alguien nuevo, ocupa el lugar del evaluador cuya evaluación revisa.
 // ============================================================
-function puedeSeguir(){return!!usuarioActual&&usuarioActual.perfil==="coordinador";}
+const UMBRAL_OBS=2;
+const MAX_EQUIPO=3;
+const ESTADOS_EVAL={
+  vacio:["pill","Sin evaluador"], en_curso:["b-curso","En curso"], cerrada:["b-comp","Cerrada"],
+  con_observaciones:["b-obs","Con observaciones"], en_revision:["b-curso","En revisión"],
+  reenviada:["b-pend","Para verificar"], subsanada:["b-aprob","Subsanada"]
+};
 function hoyISO(){return new Date().toISOString().slice(0,10);}
-
-// Observaciones que se pueden seguir: solo de evaluaciones ya cerradas
-function observacionesAula(a){
-  const out=[];
-  a.evaluadoresIds.forEach((uid,i)=>{
-    if(a.completadas[uid]!==true)return;
-    const n=i+1;
-    CRITERIOS.forEach(c=>{
-      const r=a.valoraciones[c.id];
-      const t=r&&r["c"+n]?r["c"+n].trim():"";
-      if(t)out.push({clave:`${a.id}|${c.id}|${uid}`,aulaId:a.id,critId:c.id,uid,valor:r["e"+n]||"",texto:t});
-    });
-    const g=(a.obsGenerales["o"+n]||"").trim();
-    if(g)out.push({clave:`${a.id}|general|${uid}`,aulaId:a.id,critId:"general",uid,valor:"",texto:g});
+function nuevoPuesto(){return{autor:"",fechaCierre:"",obs:{tiene:false,auto:false,manual:false,motivo:"",parcial:false},estado:"",revision:null,rondas:[],historial:[]};}
+function puesto(a,k){a.puestos=a.puestos||[];if(!a.puestos[k])a.puestos[k]=nuevoPuesto();return a.puestos[k];}
+function cerradaPuesto(a,k){const uid=a.evaluadoresIds[k];return!!uid&&a.completadas[uid]===true;}
+function estadoPuesto(a,k){
+  if(!a.evaluadoresIds[k])return"vacio";
+  if(!cerradaPuesto(a,k))return"en_curso";
+  return puesto(a,k).estado||"cerrada";
+}
+function badgeEstadoEval(e,a,k){
+  const [cls,l]=ESTADOS_EVAL[e]||ESTADOS_EVAL.cerrada;
+  const parcial=e==="con_observaciones"&&a&&puesto(a,k).obs.parcial;
+  return`<span class="${cls==="pill"?"pill":"badge "+cls}">${parcial?"Parcialmente subsanada":l}</span>`;
+}
+// Criterios con 2 o menos. Si se pasan "valores" ({critId:{e,c}}) se evalúan esos.
+function criteriosBajos(a,k,valores){
+  return CRITERIOS.filter(c=>{
+    const v=valores?(valores[c.id]&&valores[c.id].e):(a.valoraciones[c.id]&&a.valoraciones[c.id]["e"+(k+1)]);
+    return v&&+v<=UMBRAL_OBS;
   });
-  return out;
 }
-function itemSeg(clave){return SEGUIMIENTO.find(s=>s.clave===clave)||null;}
-function rotuloCrit(critId){
-  if(critId==="general")return"Observación general";
-  const c=CRITERIOS.find(x=>x.id===critId);
-  return c?`${rotulo(c)} ${c.label}`:critId;
+function valoresColumna(a,k){
+  const o={};
+  CRITERIOS.forEach(c=>{const r=a.valoraciones[c.id]||{};o[c.id]={e:r["e"+(k+1)]||"",c:r["c"+(k+1)]||""};});
+  return o;
 }
-function colorCrit(critId){const c=CRITERIOS.find(x=>x.id===critId);return c?colorDim(c.dim):"#546E7A";}
-function resumenSeg(aulaIds){
-  const it=SEGUIMIENTO.filter(s=>aulaIds.includes(s.aulaId));
-  return{total:it.length,pend:it.filter(s=>s.estado==="pendiente").length,ok:it.filter(s=>s.estado==="subsanada").length};
+function equipoCarrera(cid){return[...new Set(aulasDe(cid).flatMap(a=>a.evaluadoresIds))];}
+function excedeEquipo(cid,uids){return new Set([...equipoCarrera(cid),...uids]).size>MAX_EQUIPO;}
+function avisoEquipo(cid){
+  return`La carrera ya tiene ${MAX_EQUIPO} evaluadores (${equipoCarrera(cid).map(nombreDe).join(", ")}), que es el máximo.\n\nPara incorporar a otra persona, usá "👥 Equipo" en Carreras y reemplazá a alguien del equipo.`;
 }
-
-function seguirObservacion(clave){
-  if(!puedeSeguir()||itemSeg(clave))return;
-  const aid=+clave.split("|")[0];
-  const o=observacionesAula(getAula(aid)).find(x=>x.clave===clave);if(!o)return;
-  SEGUIMIENTO.push({id:Math.max(0,...SEGUIMIENTO.map(s=>s.id))+1,clave,aulaId:o.aulaId,critId:o.critId,uid:o.uid,
-    valor:o.valor,texto:o.texto,fechaAlta:hoyISO(),altaPor:usuarioActual.nombre,
-    estado:"pendiente",fechaVerif:"",verifPor:"",nota:""});
-  renderPagina();
+// Abre una revisión (subsanación o reapertura) sobre la evaluación k del aula
+function iniciarRevision(a,k,uid,motivo,razon,asignadaPor){
+  const p=puesto(a,k);
+  p.revision={motivo,razon:razon||"",revisorId:uid,asignadaPor,fechaAsig:hoyISO(),
+    antes:valoresColumna(a,k),valores:valoresColumna(a,k),obsRevision:"",estado:"en_revision",devoluciones:[],fechaEnvio:""};
+  p.estado="en_revision";
 }
-function dejarDeSeguir(id){
-  if(!puedeSeguir())return;
-  const s=SEGUIMIENTO.find(x=>x.id===id);if(!s)return;
-  if(!confirm("¿Quitar esta observación del seguimiento?"+(s.nota?"\nSe perderá la nota cargada.":"")))return;
-  SEGUIMIENTO=SEGUIMIENTO.filter(x=>x.id!==id);
-  renderPagina();
-}
-function marcarSubsanada(id,subsanada){
-  if(!puedeSeguir())return;
-  const s=SEGUIMIENTO.find(x=>x.id===id);if(!s)return;
-  s.estado=subsanada?"subsanada":"pendiente";
-  s.fechaVerif=subsanada?hoyISO():"";
-  s.verifPor=subsanada?usuarioActual.nombre:"";
-  renderPagina();
-}
-function setNotaSeg(id,val){
-  if(!puedeSeguir())return;
-  const s=SEGUIMIENTO.find(x=>x.id===id);if(s)s.nota=val;
-}
-function cambiarSeg(campo,val){
-  if(campo==="vista")segVista=val;
-  if(campo==="carrera")segCarrera=val;
-  if(campo==="estado")segEstado=val;
-  renderPagina();
+function puedeCoordinar(){return!!usuarioActual&&(usuarioActual.perfil==="coordinador"||usuarioActual.perfil==="administrador");}
+function nombreDe(uid){const u=getUsuario(uid);return u?u.nombre:"–";}
+function etiquetaEval(a,k){const c=getCarrera(a.carreraId);return`evaluación ${k+1} del aula "${a.asignatura}" (${c?c.nombre:"–"})`;}
+function evento(a,k,tipo,detalle){
+  puesto(a,k).historial.push({fecha:new Date().toLocaleString("es-AR"),tipo,por:usuarioActual?usuarioActual.nombre:"(sistema)",detalle:detalle||""});
 }
 
+// Mails del circuito: siempre a coordinadores y administradores, más los indicados.
+function notificar(extraUids,asunto,cuerpo){
+  const dest=new Map();
+  USUARIOS.filter(u=>u.activo&&(u.perfil==="coordinador"||u.perfil==="administrador")).forEach(u=>dest.set(u.id,u));
+  (extraUids||[]).forEach(id=>{const u=getUsuario(id);if(u&&u.activo)dest.set(u.id,u);});
+  dest.forEach(u=>simularMail(u.mail,"SEAV: "+asunto,`Estimado/a ${u.nombre},\n\n${cuerpo}\n\nSEAV – DGEDySIED`));
+}
+
+// Revisiones verificadas después de emitido el dictamen de la carrera
+function subsanacionesPosteriores(cid){
+  let n=0;
+  aulasDe(cid).forEach(a=>(a.puestos||[]).forEach(p=>{if(p)n+=p.rondas.filter(r=>r.posteriorDictamen).length;}));
+  return n;
+}
+function obsPendientes(cid){
+  let pend=0,total=0;
+  aulasDe(cid).forEach(a=>a.evaluadoresIds.forEach((_,k)=>{
+    const e=estadoPuesto(a,k);
+    if(["con_observaciones","en_revision","reenviada"].includes(e))pend++;
+    if(["con_observaciones","en_revision","reenviada","subsanada"].includes(e))total++;
+  }));
+  return{pend,total};
+}
+
+// ---------- equipo evaluador de la carrera (máximo 3) ----------
+function reemplazarEnCarrera(cid,deId,aId,motivo){
+  const c=getCarrera(cid);
+  aulasDe(cid).forEach(au=>{
+    const k=au.evaluadoresIds.indexOf(deId);
+    if(k>=0){
+      au.evaluadoresIds[k]=aId;
+      au.completadas[aId]=au.completadas[deId]===true;
+      delete au.completadas[deId];
+      evento(au,k,"Cambio de evaluador",`${nombreDe(deId)} → ${nombreDe(aId)}${motivo?" · "+motivo:""}`);
+    }
+    // si el que sale tenía revisiones a su cargo en la carrera, pasan al nuevo
+    (au.puestos||[]).forEach(p=>{if(p&&p.revision&&p.revision.revisorId===deId)p.revision.revisorId=aId;});
+  });
+  registrar("Reemplazó un evaluador",`${c?c.nombre:""}: ${nombreDe(deId)} → ${nombreDe(aId)}`);
+  notificar([aId,deId],`cambio de evaluador – ${c?c.nombre:""}`,
+    `${usuarioActual.nombre} reemplazó a ${nombreDe(deId)} por ${nombreDe(aId)} en el equipo evaluador de la carrera "${c?c.nombre:""}".\n${motivo?"Motivo: "+motivo+"\n":""}\nLas evaluaciones ya cerradas por ${nombreDe(deId)} se conservan; las que estaban en curso las continúa ${nombreDe(aId)}.`);
+}
+
+function abrirEquipo(cid){
+  if(!puedeCoordinar())return;
+  const c=getCarrera(cid);if(!c)return;
+  const eq=equipoCarrera(cid);
+  const as=aulasDe(cid);
+  const candidatos=USUARIOS.filter(u=>u.perfil==="evaluador"&&u.activo&&!eq.includes(u.id));
+  const opts=candidatos.map(u=>`<option value="${u.id}">${esc(u.nombre)}</option>`).join("");
+  const filas=eq.map(uid=>{
+    const suyas=as.filter(a=>a.evaluadoresIds.includes(uid));
+    const cerradas=suyas.filter(a=>a.completadas[uid]===true).length;
+    return`<tr>
+      <td style="font-weight:600">${esc(nombreDe(uid))}</td>
+      <td style="font-size:12px">${suyas.length} aula/s · ${cerradas} cerrada/s</td>
+      <td style="white-space:nowrap">${candidatos.length?`<select id="eq-reemp-${uid}" style="padding:5px 8px;border:1.5px solid #CFD8DC;border-radius:6px;font-size:12px;font-family:inherit">${opts}</select>
+        <button class="btn btn-sm btn-out" onclick="confirmarReemplazo(${cid},'${uid}')">⇄ Reemplazar</button>`:'<span class="pill">No hay otros evaluadores activos</span>'}</td>
+    </tr>`;}).join("")||`<tr><td colspan="3" style="text-align:center;color:#90A4AE">La carrera todavía no tiene evaluadores.</td></tr>`;
+  document.getElementById("modal-titulo").textContent="👥 Equipo evaluador";
+  document.getElementById("modal-cuerpo").innerHTML=`
+  <div style="font-weight:700;margin-bottom:4px">${esc(c.nombre)}</div>
+  <div class="alert al-info"><span>ℹ️</span><div>Cada aula la evalúan los evaluadores del equipo, <strong>hasta ${MAX_EQUIPO} por carrera</strong>. Al <strong>reemplazar</strong> a alguien, la otra persona toma su lugar en todas las aulas de la carrera: lo que ya cerró se conserva y lo que tenía en curso lo continúa quien entra.</div></div>
+  <div class="tbl-wrap" style="margin-bottom:14px"><table>
+    <thead><tr><th>Evaluador/a</th><th>Aulas</th><th>Reemplazar por</th></tr></thead><tbody>${filas}</tbody></table></div>
+  <div class="fg-item" style="margin-bottom:12px"><label>Motivo del reemplazo (queda en el historial)</label><input id="eq-motivo" placeholder="Ej.: disponibilidad, licencia…"/></div>
+  ${eq.length<MAX_EQUIPO&&!c.emitido?`<h5 style="margin:6px 0 8px;font-size:13px">Sumar al equipo (${eq.length}/${MAX_EQUIPO})</h5>
+  <div style="display:flex;gap:8px">
+    <select id="eq-sumar" style="flex:1;padding:8px 11px;border:1.5px solid #CFD8DC;border-radius:7px;font-size:13px;font-family:inherit">${opts||'<option value="">No hay evaluadores disponibles</option>'}</select>
+    <button class="btn btn-sm btn-prim" ${opts?"":"disabled"} onclick="sumarAlEquipo(${cid})">+ Sumar</button>
+  </div>
+  <div style="font-size:11.5px;color:#78909C;margin-top:6px">Se asigna a todas las aulas de la carrera que tengan lugar.</div>`:""}`;
+  document.getElementById("modal-global").style.display="flex";
+}
+function confirmarReemplazo(cid,deId){
+  if(!puedeCoordinar())return;
+  const sel=document.getElementById("eq-reemp-"+deId);if(!sel||!sel.value)return;
+  const aId=sel.value;
+  if(equipoCarrera(cid).includes(aId)){alert("Esa persona ya integra el equipo de la carrera.");return;}
+  const motivo=(document.getElementById("eq-motivo")||{}).value||"";
+  if(!confirm(`¿Reemplazar a ${nombreDe(deId)} por ${nombreDe(aId)} en todas las aulas de la carrera?`))return;
+  reemplazarEnCarrera(cid,deId,aId,motivo.trim());
+  abrirEquipo(cid);
+}
+function sumarAlEquipo(cid){
+  if(!puedeCoordinar())return;
+  const c=getCarrera(cid);
+  if(c&&c.emitido){avisoBloqueo(cid);return;}
+  const sel=document.getElementById("eq-sumar");if(!sel||!sel.value)return;
+  const uid=sel.value;
+  if(equipoCarrera(cid).length>=MAX_EQUIPO){alert(`La carrera ya tiene ${MAX_EQUIPO} evaluadores.`);return;}
+  let n=0;
+  aulasDe(cid).forEach(a=>{
+    if(a.evaluadoresIds.length<EVALUADORES_POR_AULA&&!a.evaluadoresIds.includes(uid)){
+      a.evaluadoresIds.push(uid);a.completadas[uid]=false;n++;
+      notificarAsignacion(getUsuario(uid),a,c);
+    }
+  });
+  registrar("Sumó un evaluador al equipo",`${c.nombre}: ${nombreDe(uid)} (${n} aula/s)`);
+  abrirEquipo(cid);
+}
+
+// ---------- asignar revisor / reabrir (coordinador) ----------
+function abrirAsignarRevisor(aid,k,motivo){
+  if(!puedeCoordinar())return;
+  const a=getAula(aid);if(!a)return;
+  const p=puesto(a,k), autorId=a.evaluadoresIds[k];
+  const equipo=equipoCarrera(a.carreraId);
+  const bajos=criteriosBajos(a,k);
+  const reapertura=motivo==="reapertura";
+  const actual=p.revision?p.revision.revisorId:autorId;
+  const opciones=USUARIOS.filter(u=>u.perfil==="evaluador"&&u.activo).map(u=>{
+    const nota=u.id===autorId?"quien la evaluó":equipo.includes(u.id)?"del equipo de la carrera":`nuevo · reemplaza a ${nombreDe(autorId)}`;
+    return`<option value="${u.id}"${u.id===actual?" selected":""}>${esc(u.nombre)} — ${nota}</option>`;
+  }).join("");
+  document.getElementById("modal-titulo").textContent=reapertura?"↺ Reabrir evaluación":(p.revision?"🔁 Cambiar revisor":"👤 Asignar revisor");
+  document.getElementById("modal-cuerpo").innerHTML=`
+  <div class="preview-section">
+    <h5>${esc(a.asignatura)} · Evaluación ${k+1}</h5>
+    <div style="font-size:12.5px;color:#455A64;line-height:1.7">
+      Evaluó: <strong>${esc(nombreDe(p.autor||autorId))}</strong>${p.fechaCierre?` · cerrada el ${fmtFecha(p.fechaCierre)}`:""} · Estado: ${badgeEstadoEval(estadoPuesto(a,k),a,k)}<br/>
+      ${reapertura?"La evaluación no tiene observaciones pendientes; se reabre para una corrección.":
+        (bajos.length?`Criterios con 2 o menos: ${bajos.map(c=>`<span class="badge b-crit" style="margin:2px 2px 0 0">${rotulo(c)} ${esc(c.label)}</span>`).join(" ")}<br/>`:"")+
+        (p.obs.manual||p.obs.parcial?`Observación del ${p.obs.parcial?"coordinador":"evaluador"}: <em>${esc(p.obs.motivo)}</em>`:"")}
+    </div>
+  </div>
+  ${reapertura?`<div class="fg-item" style="margin-bottom:12px"><label>Motivo de la reapertura (obligatorio)</label><input id="rev-razon" placeholder="Qué hay que revisar o corregir"/></div>`:""}
+  <div class="fg-item" style="margin-bottom:8px"><label>Revisor/a</label>
+    <select id="rev-sel" onchange="avisoRevisor(${a.id},${k})">${opciones}</select></div>
+  <div id="rev-aviso" style="font-size:12px;color:#E65100;min-height:16px;margin-bottom:12px"></div>
+  <div class="alert al-info" style="font-size:12.5px"><span>ℹ️</span><div>La revisión se hace aparte: <strong>la evaluación original no se modifica</strong>. Cuando el revisor la reenvíe, la verificás desde Seguimiento.</div></div>
+  <div style="display:flex;justify-content:flex-end;gap:8px">
+    <button class="btn btn-out" onclick="closeModal()">Cancelar</button>
+    <button class="btn btn-prim" onclick="confirmarRevisor(${a.id},${k},'${reapertura?"reapertura":"subsanacion"}')">${reapertura?"↺ Reabrir y asignar":"Asignar revisor"}</button>
+  </div>`;
+  document.getElementById("modal-global").style.display="flex";
+  avisoRevisor(a.id,k);
+}
+function avisoRevisor(aid,k){
+  const a=getAula(aid),sel=document.getElementById("rev-sel"),av=document.getElementById("rev-aviso");
+  if(!a||!sel||!av)return;
+  const autorId=a.evaluadoresIds[k];
+  av.textContent=sel.value!==autorId&&!equipoCarrera(a.carreraId).includes(sel.value)
+    ?`⚠ ${nombreDe(sel.value)} no integra el equipo de la carrera: para respetar el máximo de ${MAX_EQUIPO}, va a reemplazar a ${nombreDe(autorId)} en todas las aulas de la carrera. Las evaluaciones de ${nombreDe(autorId)} se conservan.`:"";
+}
+function confirmarRevisor(aid,k,motivo){
+  if(!puedeCoordinar())return;
+  const a=getAula(aid);if(!a)return;
+  const p=puesto(a,k),sel=document.getElementById("rev-sel");
+  if(!sel||!sel.value)return;
+  const uid=sel.value,autorId=a.evaluadoresIds[k];
+  const e=estadoPuesto(a,k);
+  if(e==="reenviada"){alert("Esta revisión ya fue reenviada: verificala desde Seguimiento.");return;}
+  if(!["con_observaciones","en_revision","cerrada","subsanada"].includes(e)){alert("Solo se puede asignar una revisión a una evaluación cerrada.");return;}
+  let razon="";
+  if(motivo==="reapertura"){
+    razon=((document.getElementById("rev-razon")||{}).value||"").trim();
+    if(!razon){alert("Indicá el motivo de la reapertura.");return;}
+  }
+  if(uid!==autorId&&!equipoCarrera(a.carreraId).includes(uid))
+    reemplazarEnCarrera(a.carreraId,autorId,uid,`Asignado/a como revisor/a de la ${etiquetaEval(a,k)}`);
+  if(p.revision&&p.revision.estado==="en_revision"){
+    const ant=p.revision.revisorId;
+    p.revision.revisorId=uid;
+    evento(a,k,"Cambio de revisor",`${nombreDe(ant)} → ${nombreDe(uid)}`);
+  }else{
+    iniciarRevision(a,k,uid,motivo,razon,usuarioActual.nombre);
+    evento(a,k,motivo==="reapertura"?"Reapertura":"Revisor asignado",`${nombreDe(uid)}${razon?" · Motivo: "+razon:""}`);
+  }
+  p.estado="en_revision";
+  registrar(motivo==="reapertura"?"Reabrió una evaluación":"Asignó revisor",`${etiquetaEval(a,k)} → ${nombreDe(uid)}${razon?" · "+razon:""}`);
+  notificar([uid],`${motivo==="reapertura"?"evaluación reabierta":"revisión asignada"} – ${a.asignatura}`,
+    `${usuarioActual.nombre} asignó a ${nombreDe(uid)} la ${motivo==="reapertura"?"corrección":"revisión de las observaciones"} de la ${etiquetaEval(a,k)}.${razon?"\nMotivo: "+razon:""}\n\nLa revisión se completa desde "Mis evaluaciones". La evaluación original se conserva sin cambios.`);
+  closeModal();renderPagina();
+}
+
+// ---------- pantalla de revisión (revisor) ----------
+let revAulaId=null,revK=0,revSoloObs=true;
+function abrirRevision(aid,k){
+  const a=getAula(aid);if(!a)return;
+  const p=puesto(a,k);
+  revAulaId=aid;revK=k;
+  revSoloObs=!!(p.revision&&p.revision.motivo!=="reapertura"&&criteriosBajos(a,k,p.revision.antes).length);
+  goto("revision");
+}
+function htmlRevision(){
+  const a=getAula(revAulaId);
+  if(!a)return`<div class="alert al-info">Elegí una revisión desde Mis evaluaciones o Seguimiento.</div>`;
+  const k=revK,p=puesto(a,k),rev=p.revision,car=getCarrera(a.carreraId);
+  if(!rev)return`<div class="alert al-info"><span>ℹ️</span><div>La ${etiquetaEval(a,k)} no tiene una revisión en curso.</div></div>`;
+  const edita=usuarioActual.id===rev.revisorId&&rev.estado==="en_revision";
+  const observados=criteriosBajos(a,k,rev.antes).map(c=>c.id);
+  const lista=revSoloObs&&observados.length?CRITERIOS.filter(c=>observados.includes(c.id)):CRITERIOS;
+  const pts=CRITERIOS.reduce((s,c)=>s+(+rev.valores[c.id].e||0),0);
+  const ptsAntes=CRITERIOS.reduce((s,c)=>s+(+rev.antes[c.id].e||0),0);
+  const quedan=criteriosBajos(a,k,rev.valores).length;
+  const ultDev=rev.devoluciones.length?rev.devoluciones[rev.devoluciones.length-1]:null;
+  const tarjetas=lista.map(c=>{
+    const ant=rev.antes[c.id],nue=rev.valores[c.id],obs=observados.includes(c.id);
+    return`<div class="crit-card" style="border-left:4px solid ${obs?"#C62828":colorDim(c.dim)}">
+      <div class="crit-head">
+        <div class="crit-num" style="background:${colorDim(c.dim)}">${c.nro}</div>
+        <div style="flex:1"><h5>${esc(c.label)}</h5>
+          <div class="crit-sub">${obs?'<span class="badge b-crit">Observado</span> ':""}Original: ${badgeNivel(ant.e)} → Revisión: ${badgeNivel(nue.e)}</div></div>
+      </div>
+      <div class="crit-body">
+        ${ant.c?`<div class="seg-texto" style="margin-top:0"><strong>Observación original:</strong> “${esc(ant.c)}”</div>`:""}
+        <div class="desc-grid">
+          ${ESCALA.map(e=>{const activo=nue.e===e.val;
+            return`<div class="desc-card${activo?" sel":""}${edita?"":" ro"}" style="color:${e.color};${activo?`background:${e.bg};border-color:${e.color}`:""}" ${edita?`onclick="setRevNivel('${c.id}','${e.val}')"`:""}>
+              <div class="desc-top"><div class="desc-pt" style="background:${e.bg};color:${e.color}">${e.val}</div><div class="desc-lbl">${e.label}</div></div>
+              <div class="desc-txt">${esc(c["d"+e.val])}</div></div>`;}).join("")}
+        </div>
+        <div class="obs-box"><label>Observación de la revisión</label>
+          <textarea ${edita?"":"disabled"} placeholder="Qué se verificó en el aula para este criterio…" onchange="setRevCom('${c.id}',this.value)">${esc(nue.c)}</textarea></div>
+      </div>
+    </div>`;}).join("");
+  return`
+  <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:18px;gap:12px;flex-wrap:wrap">
+    <div>
+      <h2 style="font-size:21px;font-weight:700;color:#003087">${rev.motivo==="reapertura"?"↺ Evaluación reabierta":"🔁 Revisión de observaciones"}</h2>
+      <p style="color:#78909C;margin-top:2px">${esc(a.asignatura)} · ${esc(car?car.nombre:"")} · Evaluación ${k+1}</p>
+    </div>
+    ${edita?`<div style="display:flex;gap:8px"><button class="btn btn-ok" onclick="guardarRevision()">💾 Guardar avance</button><button class="btn btn-warn" onclick="reenviarRevision()">📤 Reenviar al coordinador</button></div>`:""}
+  </div>
+  <div class="preview-section" style="font-size:12.5px;line-height:1.75;color:#455A64">
+    Evaluación original de <strong>${esc(nombreDe(p.autor||a.evaluadoresIds[k]))}</strong>${p.fechaCierre?`, cerrada el ${fmtFecha(p.fechaCierre)}`:""}. Se conserva sin cambios.<br/>
+    Revisor/a: <strong>${esc(nombreDe(rev.revisorId))}</strong> · asignada por ${esc(rev.asignadaPor)} el ${fmtFecha(rev.fechaAsig)}
+    ${rev.razon?`<br/>Motivo de la reapertura: <em>${esc(rev.razon)}</em>`:""}
+    ${p.obs.motivo&&rev.motivo!=="reapertura"?`<br/>Observación a subsanar: <em>${esc(p.obs.motivo)}</em>`:""}
+  </div>
+  ${ultDev&&rev.estado==="en_revision"?`<div class="alert al-warn"><span>↩</span><div><strong>El coordinador devolvió la revisión</strong> el ${fmtFecha(ultDev.fecha)}: “${esc(ultDev.comentario)}”</div></div>`:""}
+  ${rev.estado==="reenviada"?`<div class="alert al-ok"><span>📤</span><div>Revisión reenviada el ${fmtFecha(rev.fechaEnvio)}. Espera la verificación del coordinador.</div></div>`:""}
+  ${!edita&&rev.estado==="en_revision"?`<div class="alert al-info"><span>👁</span><div>Vista de solo lectura: la revisión está a cargo de ${esc(nombreDe(rev.revisorId))}.</div></div>`:""}
+  <div class="stats-grid">
+    <div class="stat-card blue"><div class="s-lbl">Puntaje original</div><div class="s-val">${ptsAntes}</div><div class="s-sub">de ${PUNTAJE_MAXIMO}</div></div>
+    <div class="stat-card teal"><div class="s-lbl">Puntaje revisado</div><div class="s-val">${pts}</div><div class="s-sub">de ${PUNTAJE_MAXIMO}</div></div>
+    <div class="stat-card amber"><div class="s-lbl">Observados</div><div class="s-val">${observados.length}</div><div class="s-sub">criterios con 2 o menos</div></div>
+    <div class="stat-card ${quedan?"red":"green"}"><div class="s-lbl">Quedan con 2 o menos</div><div class="s-val">${quedan}</div><div class="s-sub">en la revisión</div></div>
+  </div>
+  ${observados.length?`<div style="display:flex;gap:8px;margin-bottom:14px">
+    <button class="btn btn-sm ${revSoloObs?"btn-prim":"btn-out"}" onclick="revSoloObs=true;renderPagina()">Solo observados (${observados.length})</button>
+    <button class="btn btn-sm ${revSoloObs?"btn-out":"btn-prim"}" onclick="revSoloObs=false;renderPagina()">Los ${CRITERIOS.length} criterios</button></div>`:""}
+  ${tarjetas}
+  <div class="card" style="box-shadow:none;border:1px solid #E0E0E0">
+    <div class="card-hdr"><h4>📝 ${rev.motivo==="reapertura"?"Qué se corrigió":"Qué se subsanó"}</h4></div>
+    <div class="card-body"><textarea id="rev-obs" ${edita?"":"disabled"} style="width:100%;padding:11px;border:1.5px solid #CFD8DC;border-radius:8px;font-size:13px;font-family:inherit;min-height:90px;resize:vertical"
+      placeholder="Resumen para el coordinador: qué se verificó en el aula y qué cambió…" onchange="setRevObs(this.value)">${esc(rev.obsRevision)}</textarea></div>
+  </div>`;
+}
+function revisionActual(){const a=getAula(revAulaId);if(!a)return null;const p=puesto(a,revK);return p.revision?{a,k:revK,p,rev:p.revision}:null;}
+function puedeEditarRevision(r){return r&&usuarioActual.id===r.rev.revisorId&&r.rev.estado==="en_revision";}
+function setRevNivel(critId,val){const r=revisionActual();if(!puedeEditarRevision(r))return;r.rev.valores[critId].e=val;renderPagina();}
+function setRevCom(critId,val){const r=revisionActual();if(!puedeEditarRevision(r))return;r.rev.valores[critId].c=val;}
+function setRevObs(val){const r=revisionActual();if(!puedeEditarRevision(r))return;r.rev.obsRevision=val;}
+function guardarRevision(){
+  const o=document.getElementById("rev-obs");if(o)setRevObs(o.value);
+  alert("💾 Avance de la revisión guardado.");
+}
+function reenviarRevision(){
+  const r=revisionActual();if(!puedeEditarRevision(r))return;
+  const o=document.getElementById("rev-obs");if(o)setRevObs(o.value);
+  const {a,k,p,rev}=r;
+  const sinValor=CRITERIOS.filter(c=>!rev.valores[c.id].e).length;
+  if(sinValor){alert(`Faltan valorar ${sinValor} criterio/s.`);return;}
+  if(!rev.obsRevision.trim()){alert("Escribí un resumen de lo que se subsanó o corrigió para el coordinador.");return;}
+  const cambios=CRITERIOS.filter(c=>rev.valores[c.id].e!==rev.antes[c.id].e);
+  if(!confirm(`¿Reenviar la revisión al coordinador?\n\n${cambios.length} criterio/s con valoración modificada. Mientras se verifica no se puede editar.`))return;
+  rev.estado="reenviada";rev.fechaEnvio=hoyISO();p.estado="reenviada";
+  evento(a,k,"Revisión reenviada",`${cambios.length} criterio/s modificados`);
+  registrar("Reenvió una revisión",etiquetaEval(a,k));
+  notificar([],`revisión reenviada para verificar – ${a.asignatura}`,
+    `${usuarioActual.nombre} reenvió la revisión de la ${etiquetaEval(a,k)}.\n\nCambios:\n${cambios.map(c=>`  ${rotulo(c)} ${c.label}: ${rev.antes[c.id].e} → ${rev.valores[c.id].e}`).join("\n")||"  (sin cambios de valoración)"}\n\nResumen del revisor: ${rev.obsRevision}\n\nIngresá a Seguimiento para verificarla.`);
+  goto(usuarioActual.perfil==="evaluador"?"misevaluaciones":"seguimiento");
+  setTimeout(()=>alert("📤 Revisión reenviada. Se notificó al coordinador y al administrador."),200);
+}
+
+// ---------- verificación (coordinador) ----------
+function abrirVerificacion(aid,k){
+  if(!puedeCoordinar())return;
+  const a=getAula(aid);if(!a)return;
+  const p=puesto(a,k),rev=p.revision;
+  if(!rev||rev.estado!=="reenviada"){alert("No hay una revisión reenviada para verificar.");return;}
+  const observados=criteriosBajos(a,k,rev.antes).map(c=>c.id);
+  const filas=CRITERIOS.filter(c=>observados.includes(c.id)||rev.valores[c.id].e!==rev.antes[c.id].e||rev.valores[c.id].c!==rev.antes[c.id].c).map(c=>{
+    const ant=rev.antes[c.id],nue=rev.valores[c.id];
+    return`<tr>
+      <td style="font-size:12.5px">${rotulo(c)} ${esc(c.label)}${observados.includes(c.id)?' <span class="badge b-crit" style="font-size:9.5px">observado</span>':""}</td>
+      <td style="text-align:center">${badgeNivel(ant.e)}</td>
+      <td style="text-align:center">${badgeNivel(nue.e)}</td>
+      <td style="font-size:12px;color:#455A64">${esc(nue.c||"")}</td>
+    </tr>`;}).join("")||`<tr><td colspan="4" style="text-align:center;color:#90A4AE">Sin cambios en las valoraciones.</td></tr>`;
+  const quedan=criteriosBajos(a,k,rev.valores);
+  const reap=rev.motivo==="reapertura";
+  document.getElementById("modal-titulo").textContent="🔍 Verificar revisión";
+  document.getElementById("modal-cuerpo").innerHTML=`
+  <div class="preview-section" style="font-size:12.5px;line-height:1.7;color:#455A64">
+    <strong>${esc(a.asignatura)}</strong> · Evaluación ${k+1} · Evaluó ${esc(nombreDe(p.autor))}<br/>
+    Revisó <strong>${esc(nombreDe(rev.revisorId))}</strong> · reenviada el ${fmtFecha(rev.fechaEnvio)}${reap?` · Reapertura: <em>${esc(rev.razon)}</em>`:""}
+  </div>
+  <div class="tbl-wrap" style="margin-bottom:12px"><table>
+    <thead><tr><th>Criterio</th><th style="text-align:center">Original</th><th style="text-align:center">Revisión</th><th>Observación de la revisión</th></tr></thead><tbody>${filas}</tbody></table></div>
+  <div class="seg-texto"><strong>Resumen del revisor:</strong> ${esc(rev.obsRevision)}</div>
+  <div class="alert ${quedan.length?"al-warn":"al-ok"}" style="margin-top:10px"><span>${quedan.length?"⚠️":"✅"}</span><div>${quedan.length?`En la revisión quedan ${quedan.length} criterio/s con 2 o menos: ${quedan.map(c=>rotulo(c)+" "+esc(c.label)).join(" · ")}.`:"Ningún criterio quedó con 2 o menos."}</div></div>
+  <div class="fg-item" style="margin-bottom:12px"><label>Comentario de la verificación (obligatorio para parcial o devolución)</label>
+    <textarea id="ver-com" style="width:100%;padding:9px 11px;border:1.5px solid #CFD8DC;border-radius:7px;font-size:13px;font-family:inherit;min-height:60px"></textarea></div>
+  <div style="display:flex;justify-content:flex-end;gap:8px;flex-wrap:wrap">
+    <button class="btn btn-out" onclick="verificarRevision(${a.id},${k},'devuelta')">↩ Devolver al revisor</button>
+    ${reap?"":`<button class="btn btn-warn" onclick="verificarRevision(${a.id},${k},'parcial')">◐ Parcialmente subsanada</button>`}
+    <button class="btn btn-ok" onclick="verificarRevision(${a.id},${k},'${reap?"aprobada":"subsanada"}')">✅ ${reap?"Aprobar cambios":"Subsanada"}</button>
+  </div>`;
+  document.getElementById("modal-global").style.display="flex";
+}
+function verificarRevision(aid,k,resultado){
+  if(!puedeCoordinar())return;
+  const a=getAula(aid);if(!a)return;
+  const p=puesto(a,k),rev=p.revision;
+  if(!rev||rev.estado!=="reenviada")return;
+  const com=((document.getElementById("ver-com")||{}).value||"").trim();
+  const car=getCarrera(a.carreraId);
+  if(resultado==="devuelta"){
+    if(!com){alert("Indicá qué falta corregir antes de devolverla.");return;}
+    rev.estado="en_revision";rev.devoluciones.push({fecha:hoyISO(),por:usuarioActual.nombre,comentario:com});
+    p.estado="en_revision";
+    evento(a,k,"Revisión devuelta",com);
+    registrar("Devolvió una revisión",`${etiquetaEval(a,k)} · ${com}`);
+    notificar([rev.revisorId],`revisión devuelta – ${a.asignatura}`,`${usuarioActual.nombre} devolvió la revisión de la ${etiquetaEval(a,k)}.\n\nComentario: ${com}\n\nLa podés retomar desde "Mis evaluaciones".`);
+    closeModal();renderPagina();return;
+  }
+  if(resultado==="parcial"&&!com){alert("Indicá qué quedó pendiente.");return;}
+  // Los valores revisados pasan a ser los vigentes; la original queda en el historial
+  CRITERIOS.forEach(c=>{
+    const r=a.valoraciones[c.id]||(a.valoraciones[c.id]={e1:"",e2:"",e3:"",c1:"",c2:"",c3:""});
+    r["e"+(k+1)]=rev.valores[c.id].e;r["c"+(k+1)]=rev.valores[c.id].c;
+  });
+  p.rondas.push({motivo:rev.motivo,razon:rev.razon,revisorId:rev.revisorId,antes:rev.antes,despues:rev.valores,obsRevision:rev.obsRevision,
+    fechaEnvio:rev.fechaEnvio,devoluciones:rev.devoluciones,posteriorDictamen:!!(car&&car.emitido),
+    verificacion:{por:usuarioActual.nombre,fecha:hoyISO(),resultado,comentario:com}});
+  const revisor=rev.revisorId;
+  p.revision=null;
+  const bajos=criteriosBajos(a,k);
+  if(resultado==="subsanada"){p.obs={tiene:false,auto:false,manual:false,motivo:"",parcial:false};p.estado="subsanada";}
+  else if(resultado==="parcial"){p.obs={tiene:true,auto:bajos.length>0,manual:!bajos.length,motivo:com,parcial:true};p.estado="con_observaciones";}
+  else{p.obs={tiene:bajos.length>0,auto:bajos.length>0,manual:false,motivo:"",parcial:false};p.estado=bajos.length?"con_observaciones":"cerrada";}
+  const txt={subsanada:"Subsanada",parcial:"Parcialmente subsanada",aprobada:"Cambios aprobados"}[resultado];
+  evento(a,k,"Verificación: "+txt,com);
+  registrar("Verificó una revisión",`${etiquetaEval(a,k)} · ${txt}${car&&car.emitido?" · posterior al dictamen":""}`);
+  notificar([revisor,p.autor],`revisión verificada (${txt.toLowerCase()}) – ${a.asignatura}`,
+    `${usuarioActual.nombre} verificó la revisión de la ${etiquetaEval(a,k)}: ${txt}.${com?"\nComentario: "+com:""}${resultado==="parcial"?"\n\nLa evaluación sigue con observaciones: el coordinador asignará una nueva revisión.":""}${car&&car.emitido?"\n\nLa carrera ya tenía el dictamen emitido: el dictamen no se modifica (tratamiento pendiente de definición).":""}`);
+  closeModal();renderPagina();
+}
+
+// ---------- historial de una evaluación ----------
+function abrirHistorial(aid,k){
+  const a=getAula(aid);if(!a)return;
+  const p=puesto(a,k);
+  const original=p.rondas.length?p.rondas[0].antes:null;
+  const comp=original?`<h5 style="font-size:13px;margin:14px 0 8px">Original y vigente</h5>
+    <div class="tbl-wrap"><table><thead><tr><th>Criterio</th><th style="text-align:center">Original</th><th style="text-align:center">Vigente</th></tr></thead><tbody>
+    ${CRITERIOS.filter(c=>original[c.id].e!==((a.valoraciones[c.id]||{})["e"+(k+1)])).map(c=>`<tr><td style="font-size:12.5px">${rotulo(c)} ${esc(c.label)}</td><td style="text-align:center">${badgeNivel(original[c.id].e)}</td><td style="text-align:center">${badgeNivel((a.valoraciones[c.id]||{})["e"+(k+1)])}</td></tr>`).join("")||'<tr><td colspan="3" style="text-align:center;color:#90A4AE">Sin cambios de valoración.</td></tr>'}
+    </tbody></table></div>`:"";
+  document.getElementById("modal-titulo").textContent="🕑 Historial de la evaluación";
+  document.getElementById("modal-cuerpo").innerHTML=`
+  <div class="preview-section" style="font-size:12.5px;line-height:1.7;color:#455A64">
+    <strong>${esc(a.asignatura)}</strong> · Evaluación ${k+1}<br/>
+    Evaluó: ${esc(nombreDe(p.autor||a.evaluadoresIds[k]))} · Responsable actual: ${esc(nombreDe(a.evaluadoresIds[k]))} · Estado: ${badgeEstadoEval(estadoPuesto(a,k),a,k)}
+  </div>
+  ${p.historial.length?`<div class="tbl-wrap"><table><thead><tr><th>Fecha</th><th>Evento</th><th>Por</th><th>Detalle</th></tr></thead><tbody>
+    ${p.historial.map(h=>`<tr><td style="font-size:11.5px;white-space:nowrap;color:#546E7A">${esc(h.fecha)}</td><td style="font-weight:600;font-size:12.5px">${esc(h.tipo)}</td><td style="font-size:12px">${esc(h.por)}</td><td style="font-size:12px;color:#455A64">${esc(h.detalle)}</td></tr>`).join("")}
+  </tbody></table></div>`:'<div class="alert al-info">Sin eventos registrados.</div>'}
+  ${comp}`;
+  document.getElementById("modal-global").style.display="flex";
+}
+
+// ---------- panel de Seguimiento (coordinador; el admin también puede actuar) ----------
+let segCarrera="todas",segEstado="pendientes";
+function cambiarSeg(campo,val){if(campo==="carrera")segCarrera=val;if(campo==="estado")segEstado=val;renderPagina();}
 function htmlSeguimiento(){
-  const edita=puedeSeguir();
+  const edita=puedeCoordinar();
   const carreras=segCarrera==="todas"?CARRERAS:CARRERAS.filter(c=>String(c.id)===segCarrera);
-  const aulaIds=AULAS.filter(a=>carreras.some(c=>c.id===a.carreraId)).map(a=>a.id);
-  const r=resumenSeg(aulaIds);
-  const pct=r.total?Math.round(r.ok/r.total*100):0;
-  const btnVista=(v,l)=>`<button class="btn btn-sm ${segVista===v?"btn-prim":"btn-out"}" onclick="cambiarSeg('vista','${v}')">${l}</button>`;
+  const items=[];
+  carreras.forEach(c=>aulasDe(c.id).forEach(a=>a.evaluadoresIds.forEach((_,k)=>{
+    const e=estadoPuesto(a,k);if(e!=="vacio"&&e!=="en_curso")items.push({c,a,k,e});
+  })));
+  const cuenta=e=>items.filter(x=>x.e===e).length;
+  const filtros={pendientes:["con_observaciones","reenviada"],en_revision:["en_revision"],subsanadas:["subsanada"],todas:null};
+  const visibles=items.filter(x=>!filtros[segEstado]||filtros[segEstado].includes(x.e));
+  const btnF=(v,l)=>`<button class="btn btn-sm ${segEstado===v?"btn-prim":"btn-out"}" onclick="cambiarSeg('estado','${v}')">${l}</button>`;
+  const bloques=carreras.map(c=>{
+    const deC=visibles.filter(x=>x.c.id===c.id);
+    if(!deC.length)return"";
+    const post=c.emitido?subsanacionesPosteriores(c.id):0;
+    const porAula=aulasDe(c.id).map(a=>{
+      const deA=deC.filter(x=>x.a.id===a.id);
+      if(!deA.length)return"";
+      return`<div class="seg-aula">💻 ${esc(a.asignatura)}</div>`+deA.map(({a,k,e})=>{
+        const p=puesto(a,k),rev=p.revision,bajos=criteriosBajos(a,k);
+        const responsable=a.evaluadoresIds[k];
+        const ultima=p.rondas.length?p.rondas[p.rondas.length-1]:null;
+        let accion="";
+        if(edita){
+          if(e==="con_observaciones")accion=`<button class="btn btn-sm btn-prim" onclick="abrirAsignarRevisor(${a.id},${k},'subsanacion')">👤 Asignar revisor</button>`;
+          else if(e==="en_revision")accion=`<button class="btn btn-sm btn-out" onclick="abrirAsignarRevisor(${a.id},${k},'${rev&&rev.motivo==="reapertura"?"reapertura":"subsanacion"}')">🔁 Cambiar revisor</button>`;
+          else if(e==="reenviada")accion=`<button class="btn btn-sm btn-ok" onclick="abrirVerificacion(${a.id},${k})">🔍 Verificar</button>`;
+          else accion=`<button class="btn btn-sm btn-out" onclick="abrirAsignarRevisor(${a.id},${k},'reapertura')">↺ Reabrir</button>`;
+        }
+        return`<div class="seg-item${e==="subsanada"?" ok":""}">
+          <div style="min-width:118px">${badgeEstadoEval(e,a,k)}</div>
+          <div class="seg-cuerpo">
+            <div class="seg-crit">Evaluación ${k+1} · ${esc(nombreDe(p.autor||responsable))}${p.autor&&p.autor!==responsable?` <span class="pill">ahora a cargo de ${esc(nombreDe(responsable))}</span>`:""}</div>
+            ${bajos.length&&e!=="subsanada"?`<div style="margin-top:6px">${bajos.map(c=>`<span class="badge b-crit" style="margin:2px 3px 0 0">${rotulo(c)} ${esc(c.label)} · ${(a.valoraciones[c.id]||{})["e"+(k+1)]}</span>`).join("")}</div>`:""}
+            ${p.obs.motivo&&e!=="subsanada"?`<div class="seg-texto">${p.obs.parcial?"Pendiente según la verificación":"Observación del evaluador"}: “${esc(p.obs.motivo)}”</div>`:""}
+            <div class="seg-meta" style="margin-top:6px">
+              ${rev?`Revisor/a: <strong>${esc(nombreDe(rev.revisorId))}</strong> desde ${fmtFecha(rev.fechaAsig)}${rev.estado==="reenviada"?` · reenviada el ${fmtFecha(rev.fechaEnvio)}`:""}${rev.devoluciones.length?` · devuelta ${rev.devoluciones.length} vez/veces`:""}`:""}
+              ${ultima?`${rev?" · ":""}Última verificación: ${esc(ultima.verificacion.resultado)} el ${fmtFecha(ultima.verificacion.fecha)} (${esc(ultima.verificacion.por)})${ultima.posteriorDictamen?" · posterior al dictamen":""}`:""}
+              ${!rev&&!ultima&&p.fechaCierre?`Cerrada el ${fmtFecha(p.fechaCierre)}`:""}
+            </div>
+          </div>
+          <div style="display:flex;flex-direction:column;gap:6px;align-items:stretch">
+            ${accion}
+            <button class="btn btn-sm btn-out" onclick="abrirHistorial(${a.id},${k})">🕑 Historial</button>
+          </div>
+        </div>`;}).join("");
+    }).join("");
+    return`<div class="card"><div class="card-hdr"><h4>🎓 ${esc(c.nombre)}</h4>${celdaDictamen(c)}</div>
+      ${post?`<div class="alert al-warn" style="margin:12px 20px 0"><span>📝</span><div>Hubo <strong>${post} subsanación/es verificada/s después de emitido el dictamen</strong>. El dictamen no se modifica; cómo se registra (nota, anexo u otro) está pendiente de definición.</div></div>`:""}
+      <div class="card-body" style="padding-top:4px">${porAula}</div></div>`;
+  }).join("");
   return`
   <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:18px;gap:14px;flex-wrap:wrap">
     <div>
       <h2 style="font-size:21px;font-weight:700;color:#003087">Seguimiento de observaciones</h2>
-      <p style="color:#78909C;margin-top:2px">El coordinador elige qué observaciones de los evaluadores seguir y verifica si se subsanaron en el aula.</p>
+      <p style="color:#78909C;margin-top:2px">Evaluaciones con observaciones, revisiones en curso y verificación de lo subsanado.</p>
     </div>
     <select onchange="cambiarSeg('carrera',this.value)" style="padding:8px 12px;border:1.5px solid #CFD8DC;border-radius:7px;font-size:13px;font-family:inherit">
       <option value="todas"${segCarrera==="todas"?" selected":""}>Todas las carreras</option>
       ${CARRERAS.map(c=>`<option value="${c.id}"${segCarrera===String(c.id)?" selected":""}>${esc(c.nombre)}</option>`).join("")}
     </select>
   </div>
-  ${edita?"":`<div class="alert al-info"><span>👁</span><div>Vista de solo lectura. El seguimiento lo realizan los coordinadores.</div></div>`}
   <div class="stats-grid">
-    <div class="stat-card blue"><div class="s-lbl">En seguimiento</div><div class="s-val">${r.total}</div><div class="s-sub">Observaciones elegidas</div></div>
-    <div class="stat-card amber"><div class="s-lbl">Pendientes</div><div class="s-val">${r.pend}</div><div class="s-sub">Sin subsanar</div></div>
-    <div class="stat-card green"><div class="s-lbl">Subsanadas</div><div class="s-val">${r.ok}</div><div class="s-sub">Verificadas en el aula</div></div>
-    <div class="stat-card teal"><div class="s-lbl">Avance</div><div class="s-val">${pct} %</div>${barra(pct,"#00695C")}</div>
+    <div class="stat-card amber"><div class="s-lbl">Sin revisor</div><div class="s-val">${cuenta("con_observaciones")}</div><div class="s-sub">Con observaciones</div></div>
+    <div class="stat-card blue"><div class="s-lbl">En revisión</div><div class="s-val">${cuenta("en_revision")}</div><div class="s-sub">A cargo de un revisor</div></div>
+    <div class="stat-card purple"><div class="s-lbl">Para verificar</div><div class="s-val">${cuenta("reenviada")}</div><div class="s-sub">Reenviadas</div></div>
+    <div class="stat-card green"><div class="s-lbl">Subsanadas</div><div class="s-val">${cuenta("subsanada")}</div><div class="s-sub">Verificadas</div></div>
+  </div>
+  <div style="display:flex;gap:8px;margin-bottom:14px;flex-wrap:wrap">
+    ${btnF("pendientes",`Requieren acción (${cuenta("con_observaciones")+cuenta("reenviada")})`)}
+    ${btnF("en_revision",`En revisión (${cuenta("en_revision")})`)}
+    ${btnF("subsanadas",`Subsanadas (${cuenta("subsanada")})`)}
+    ${btnF("todas",`Todas las cerradas (${items.length})`)}
+  </div>
+  ${bloques||'<div class="alert al-info"><span>ℹ️</span><div>No hay evaluaciones en esta selección.</div></div>'}`;
+}
+
+// ============================================================
+// SEGURIDAD (solo administrador): auditoría, usuarios y perfiles,
+// accesos al sistema y política de contraseñas.
+// En el sistema real, además, las contraseñas se guardan cifradas.
+// ============================================================
+let POLITICA={largoMin:8,exigirNumero:true,exigirMayuscula:false,vencimientoDias:180,cambioPrimerIngreso:true,intentosBloqueo:5};
+let AUDITORIA=[],ACCESOS=[];
+let segTab="auditoria",audFiltro="";
+function registrar(accion,detalle){
+  AUDITORIA.push({fecha:new Date().toLocaleString("es-AR"),usuario:usuarioActual?usuarioActual.nombre:"(sistema)",perfil:usuarioActual?usuarioActual.perfil:"",accion,detalle:detalle||""});
+}
+function registrarAcceso(dni,u,resultado){
+  ACCESOS.push({fecha:new Date().toLocaleString("es-AR"),dni,usuario:u?u.nombre:"(desconocido)",resultado});
+}
+function validarPassword(p){
+  const e=[];
+  if(p.length<POLITICA.largoMin)e.push(`al menos ${POLITICA.largoMin} caracteres`);
+  if(POLITICA.exigirNumero&&!/\d/.test(p))e.push("al menos un número");
+  if(POLITICA.exigirMayuscula&&!/[A-ZÁÉÍÓÚÑ]/.test(p))e.push("al menos una mayúscula");
+  return e.length?"La contraseña debe tener "+e.join(", ")+".":"";
+}
+function passTemporal(){
+  let p="Seav";
+  while(p.length<Math.max(8,POLITICA.largoMin))p+=Math.floor(Math.random()*10);
+  if(!/\d/.test(p))p+="7";
+  return p;
+}
+function passVencida(u){
+  if(!POLITICA.vencimientoDias||!u.passFecha)return false;
+  return(Date.now()-new Date(u.passFecha+"T00:00:00").getTime())/86400000>POLITICA.vencimientoDias;
+}
+const RES_ACCESO={ok:["b-comp","✓ Ingreso"],clave_incorrecta:["b2","✗ Contraseña incorrecta"],dni_inexistente:["b2","✗ DNI inexistente"],
+  bloqueada:["b1","⛔ Cuenta bloqueada"],bloqueo:["b1","🔒 Bloqueada por intentos"],inactivo:["b-pend","Cuenta inactiva"]};
+
+// Cambio de contraseña obligatorio (primer ingreso, blanqueo o vencimiento)
+let modalBloqueante=false;
+function pedirCambioPassword(motivo){
+  modalBloqueante=true;
+  document.getElementById("modal-titulo").textContent="🔑 Cambiá tu contraseña";
+  document.getElementById("modal-cuerpo").innerHTML=`
+  <div class="alert al-warn"><span>🔑</span><div>${esc(motivo)}</div></div>
+  <div style="font-size:12.5px;color:#546E7A;margin-bottom:12px">Requisitos: al menos ${POLITICA.largoMin} caracteres${POLITICA.exigirNumero?", un número":""}${POLITICA.exigirMayuscula?", una mayúscula":""}. Tiene que ser distinta de la actual.</div>
+  <div class="fg2" style="margin-bottom:10px">
+    <div class="fg-item"><label>Nueva contraseña</label><input type="password" id="np1"/></div>
+    <div class="fg-item"><label>Repetila</label><input type="password" id="np2"/></div>
+  </div>
+  <div id="np-msg" class="error-msg" style="display:none"></div>
+  <div style="display:flex;justify-content:flex-end"><button class="btn btn-prim" onclick="guardarCambioObligatorio()">Guardar y continuar</button></div>`;
+  document.getElementById("modal-global").style.display="flex";
+}
+function guardarCambioObligatorio(){
+  const a=document.getElementById("np1").value,b=document.getElementById("np2").value,msg=document.getElementById("np-msg");
+  const err=a!==b?"Las contraseñas no coinciden.":(validarPassword(a)||(a===usuarioActual.pass?"La nueva contraseña tiene que ser distinta de la actual.":""));
+  if(err){msg.textContent=err;msg.style.display="block";return;}
+  usuarioActual.pass=a;usuarioActual.passFecha=hoyISO();usuarioActual.debeCambiar=false;
+  registrar("Cambió su contraseña","");
+  modalBloqueante=false;closeModal(true);
+  alert("✅ Contraseña actualizada.");
+}
+
+function htmlSeguridad(){
+  const tab=(v,l)=>`<button class="btn btn-sm ${segTab===v?"btn-prim":"btn-out"}" onclick="segTab='${v}';renderPagina()">${l}</button>`;
+  let cuerpo="";
+  if(segTab==="auditoria"){
+    const f=audFiltro.toLowerCase();
+    const filas=AUDITORIA.slice().reverse().filter(x=>!f||(x.usuario+" "+x.accion+" "+x.detalle).toLowerCase().includes(f)).slice(0,400);
+    cuerpo=`<div class="card"><div class="card-hdr"><h4>📜 Auditoría de acciones</h4>
+      <input placeholder="Buscar usuario, acción o detalle…" value="${esc(audFiltro)}" onchange="audFiltro=this.value;renderPagina()" style="padding:7px 11px;border:1.5px solid #CFD8DC;border-radius:7px;font-size:13px;font-family:inherit;min-width:260px"/></div>
+      <div class="tbl-wrap"><table><thead><tr><th>Fecha</th><th>Usuario</th><th>Perfil</th><th>Acción</th><th>Detalle</th></tr></thead><tbody>
+      ${filas.map(x=>`<tr><td style="font-size:11.5px;white-space:nowrap;color:#546E7A">${esc(x.fecha)}</td><td style="font-size:12.5px">${esc(x.usuario)}</td><td style="font-size:11.5px">${esc(x.perfil)}</td><td style="font-weight:600;font-size:12.5px">${esc(x.accion)}</td><td style="font-size:12px;color:#455A64">${esc(x.detalle)}</td></tr>`).join("")||'<tr><td colspan="5" style="text-align:center;color:#90A4AE">Sin registros.</td></tr>'}
+      </tbody></table></div></div>`;
+  }else if(segTab==="usuarios"){
+    const perfiles=[["evaluador","Evaluador/a"],["coordinador","Coordinador/a"],["administrador","Administrador/a"]];
+    cuerpo=`<div style="display:flex;justify-content:flex-end;margin-bottom:12px"><button class="btn btn-prim" onclick="toggleForm('form-alta-usr')">+ Nuevo usuario</button></div>
+    <div id="form-alta-usr" style="display:none"><div class="card"><div class="card-hdr"><h4>Alta de usuario</h4></div><div class="card-body">
+      <div class="fg2" style="margin-bottom:12px">
+        <div class="fg-item"><label>Apellido y nombre</label><input id="usr-nombre"/></div>
+        <div class="fg-item"><label>DNI</label><input id="usr-dni" maxlength="12"/></div>
+      </div>
+      <div class="fg2" style="margin-bottom:12px">
+        <div class="fg-item"><label>Mail institucional</label><input type="email" id="usr-mail"/></div>
+        <div class="fg-item"><label>Perfil</label><select id="usr-perfil">${perfiles.map(([v,l])=>`<option value="${v}">${l}</option>`).join("")}</select></div>
+      </div>
+      <div style="font-size:12px;color:#78909C;margin-bottom:12px">Se genera una contraseña temporal que se envía por mail; tendrá que cambiarla en el primer ingreso.</div>
+      <button class="btn btn-prim" onclick="crearUsuario()">💾 Dar de alta</button>
+    </div></div></div>
+    <div class="card"><div class="tbl-wrap"><table><thead><tr><th>Nombre</th><th>DNI</th><th>Mail</th><th>Perfil</th><th>Estado</th><th>Último acceso</th><th>Acciones</th></tr></thead><tbody>
+    ${USUARIOS.map(u=>`<tr>
+      <td style="font-weight:600">${esc(u.nombre)}${u.debeCambiar?' <span class="pill" style="font-size:9.5px">debe cambiar contraseña</span>':""}</td>
+      <td style="font-family:monospace;font-size:12px">${esc(u.dni)}</td>
+      <td style="font-size:12px">${esc(u.mail)}</td>
+      <td><span class="badge ${u.perfil==="administrador"?"b1":u.perfil==="coordinador"?"b3":"b5"}" style="font-size:10px">${esc(u.perfil)}</span></td>
+      <td>${u.bloqueado?'<span class="badge b1">🔒 Bloqueado</span>':`<span class="badge ${u.activo?"b5":"b-pend"}" style="font-size:10px">${u.activo?"Activo":"Inactivo"}</span>`}</td>
+      <td style="font-size:11.5px;color:#546E7A">${esc(u.ultimoAcceso||"–")}</td>
+      <td style="white-space:nowrap">
+        <button class="btn btn-sm btn-prim" onclick="modalUsuario('${u.id}')">✏️</button>
+        ${u.bloqueado?`<button class="btn btn-sm btn-ok" onclick="desbloquearUsuario('${u.id}')">🔓 Desbloquear</button>`:""}
+        <button class="btn btn-sm btn-out" onclick="toggleActivo('${u.id}')">${u.activo?"Desactivar":"Activar"}</button>
+      </td></tr>`).join("")}
+    </tbody></table></div></div>`;
+  }else if(segTab==="accesos"){
+    const n=r=>ACCESOS.filter(x=>x.resultado===r).length;
+    cuerpo=`<div class="stats-grid">
+      <div class="stat-card green"><div class="s-lbl">Ingresos</div><div class="s-val">${n("ok")}</div></div>
+      <div class="stat-card amber"><div class="s-lbl">Intentos fallidos</div><div class="s-val">${n("clave_incorrecta")+n("dni_inexistente")}</div></div>
+      <div class="stat-card red"><div class="s-lbl">Bloqueos</div><div class="s-val">${n("bloqueo")}</div></div>
+      <div class="stat-card blue"><div class="s-lbl">Cuentas bloqueadas hoy</div><div class="s-val">${USUARIOS.filter(u=>u.bloqueado).length}</div></div>
+    </div>
+    <div class="card"><div class="card-hdr"><h4>🚪 Accesos al sistema</h4><span class="pill">bloqueo tras ${POLITICA.intentosBloqueo} intentos fallidos</span></div>
+    <div class="tbl-wrap"><table><thead><tr><th>Fecha</th><th>DNI</th><th>Usuario</th><th>Resultado</th></tr></thead><tbody>
+    ${ACCESOS.slice().reverse().slice(0,400).map(x=>{const [cls,l]=RES_ACCESO[x.resultado]||["pill",x.resultado];return`<tr><td style="font-size:11.5px;white-space:nowrap;color:#546E7A">${esc(x.fecha)}</td><td style="font-family:monospace;font-size:12px">${esc(x.dni)}</td><td style="font-size:12.5px">${esc(x.usuario)}</td><td><span class="badge ${cls}">${l}</span></td></tr>`;}).join("")||'<tr><td colspan="4" style="text-align:center;color:#90A4AE">Sin registros.</td></tr>'}
+    </tbody></table></div></div>`;
+  }else{
+    const chk=(id,v,l)=>`<label style="display:flex;align-items:center;gap:8px;font-size:13px;margin-bottom:10px"><input type="checkbox" id="${id}"${v?" checked":""}/> ${l}</label>`;
+    cuerpo=`<div class="card"><div class="card-hdr"><h4>🔑 Política de contraseñas</h4></div><div class="card-body">
+      <div class="fg3" style="margin-bottom:14px">
+        <div class="fg-item"><label>Largo mínimo</label><input type="number" min="6" max="32" id="pol-largo" value="${POLITICA.largoMin}"/></div>
+        <div class="fg-item"><label>Vencimiento (días, 0 = no vence)</label><input type="number" min="0" id="pol-venc" value="${POLITICA.vencimientoDias}"/></div>
+        <div class="fg-item"><label>Intentos fallidos antes de bloquear</label><input type="number" min="1" max="20" id="pol-int" value="${POLITICA.intentosBloqueo}"/></div>
+      </div>
+      ${chk("pol-num",POLITICA.exigirNumero,"Exigir al menos un número")}
+      ${chk("pol-may",POLITICA.exigirMayuscula,"Exigir al menos una mayúscula")}
+      ${chk("pol-pri",POLITICA.cambioPrimerIngreso,"Cambio obligatorio en el primer ingreso y después de un blanqueo")}
+      <button class="btn btn-prim" onclick="guardarPolitica()">💾 Guardar política</button>
+      <div class="alert al-info" style="margin-top:14px;margin-bottom:0"><span>ℹ️</span><div>La política se aplica a las contraseñas que se definan de ahora en adelante. En el sistema real, las contraseñas se guardan cifradas (bcrypt o Argon2), como pidió el área de TIC.</div></div>
+    </div></div>`;
+  }
+  return`
+  <div style="margin-bottom:18px">
+    <h2 style="font-size:21px;font-weight:700;color:#003087">Seguridad</h2>
+    <p style="color:#78909C;margin-top:2px">Auditoría, usuarios y perfiles, accesos y política de contraseñas</p>
   </div>
   <div style="display:flex;gap:8px;margin-bottom:16px;flex-wrap:wrap">
-    ${btnVista("seguimiento",`📌 En seguimiento (${r.total})`)}
-    ${btnVista("agregar",edita?"➕ Elegir observaciones":"📄 Observaciones de los evaluadores")}
+    ${tab("auditoria",`📜 Auditoría (${AUDITORIA.length})`)}${tab("usuarios",`👥 Usuarios y perfiles (${USUARIOS.length})`)}${tab("accesos",`🚪 Accesos (${ACCESOS.length})`)}${tab("politica","🔑 Política de contraseñas")}
   </div>
-  ${segVista==="seguimiento"?htmlSegLista(carreras,edita):htmlSegAgregar(carreras,edita)}`;
+  ${cuerpo}`;
+}
+function crearUsuario(){
+  const nombre=document.getElementById("usr-nombre").value.trim();
+  const dni=document.getElementById("usr-dni").value.trim();
+  const mail=document.getElementById("usr-mail").value.trim();
+  const perfil=document.getElementById("usr-perfil").value;
+  altaUsuario(nombre,dni,mail,perfil);
+}
+// Alta común (Seguridad y Evaluadores): contraseña temporal y cambio obligatorio
+function altaUsuario(nombre,dni,mail,perfil){
+  if(!nombre||!dni||!mail){alert("Complete nombre, DNI y mail.");return false;}
+  if(USUARIOS.find(u=>u.dni===dni)){alert("Ya existe un usuario con ese DNI.");return false;}
+  const rol={administrador:"Administrador/a",coordinador:"Coordinador/a",evaluador:"Evaluador/a"}[perfil];
+  const pass=passTemporal();
+  USUARIOS.push({id:"u"+Date.now(),dni,pass,nombre,rol,perfil,mail,activo:true,debeCambiar:POLITICA.cambioPrimerIngreso,passFecha:hoyISO(),intentos:0,bloqueado:false});
+  simularMail(mail,"SEAV: alta en el sistema",
+    `Estimado/a ${nombre},\n\nSe le dio de alta en el SEAV – Sistema de Evaluación de Aulas Virtuales con perfil ${rol}.\n\n  Usuario (DNI): ${dni}\n  Contraseña temporal: ${pass}\n\n${POLITICA.cambioPrimerIngreso?"En el primer ingreso el sistema le pedirá definir una contraseña propia.\n\n":""}SEAV – DGEDySIED`);
+  registrar("Dio de alta un usuario",`${nombre} (${rol})`);
+  renderPagina();
+  setTimeout(()=>alert(`✅ Usuario dado de alta.\n📧 Se envió la contraseña temporal a ${mail}`),150);
+  return true;
+}
+function desbloquearUsuario(uid){
+  const u=getUsuario(uid);if(!u)return;
+  u.bloqueado=false;u.intentos=0;
+  registrar("Desbloqueó una cuenta",u.nombre);
+  renderPagina();
+}
+function guardarPolitica(){
+  const n=id=>+document.getElementById(id).value;
+  const largo=n("pol-largo"),venc=n("pol-venc"),int=n("pol-int");
+  if(!(largo>=6&&largo<=32)||!(venc>=0)||!(int>=1&&int<=20)){alert("Revisá los valores: largo entre 6 y 32, vencimiento 0 o más, intentos entre 1 y 20.");return;}
+  POLITICA={largoMin:largo,vencimientoDias:venc,intentosBloqueo:int,exigirNumero:document.getElementById("pol-num").checked,
+    exigirMayuscula:document.getElementById("pol-may").checked,cambioPrimerIngreso:document.getElementById("pol-pri").checked};
+  registrar("Modificó la política de contraseñas",`largo ${largo}, vencimiento ${venc} días, bloqueo a los ${int} intentos`);
+  renderPagina();
+  setTimeout(()=>alert("✅ Política guardada."),100);
 }
 
-// Vista 1: las observaciones elegidas, con su tilde de "Subsanada"
-function htmlSegLista(carreras,edita){
-  const filtros=[["pendiente","Pendientes"],["subsanada","Subsanadas"],["todas","Todas"]]
-    .map(([v,l])=>`<button class="btn btn-sm ${segEstado===v?"btn-prim":"btn-out"}" onclick="cambiarSeg('estado','${v}')">${l}</button>`).join("");
-  const bloques=carreras.map(c=>{
-    const porAula=aulasDe(c.id).map(a=>{
-      const items=SEGUIMIENTO.filter(s=>s.aulaId===a.id&&(segEstado==="todas"||s.estado===segEstado));
-      if(!items.length)return"";
-      return`<div class="seg-aula">💻 ${esc(a.asignatura)}</div>`+items.map(s=>{
-        const u=getUsuario(s.uid);
-        const ok=s.estado==="subsanada";
-        return`<div class="seg-item${ok?" ok":""}">
-          <label class="seg-check"><input type="checkbox"${ok?" checked":""}${edita?"":" disabled"} onchange="marcarSubsanada(${s.id},this.checked)"/>${ok?"Subsanada":"Pendiente"}</label>
-          <div class="seg-cuerpo">
-            <div class="seg-crit"><span style="color:${colorCrit(s.critId)}">${esc(rotuloCrit(s.critId))}</span>${s.valor?badgeNivel(s.valor):""}</div>
-            <div class="seg-texto">“${esc(s.texto)}”</div>
-            <div class="seg-meta">Observó: <strong>${esc(u?u.nombre:"–")}</strong> · En seguimiento desde ${fmtFecha(s.fechaAlta)} (${esc(s.altaPor)})${ok?` · <span style="color:#2E7D32;font-weight:700">✓ Verificada el ${fmtFecha(s.fechaVerif)} por ${esc(s.verifPor)}</span>`:""}</div>
-            <textarea class="seg-nota"${edita?"":" disabled"} placeholder="Notas del seguimiento: qué se pidió, qué se verificó…" onchange="setNotaSeg(${s.id},this.value)">${esc(s.nota)}</textarea>
-          </div>
-          ${edita?`<button class="btn btn-sm btn-out no-print" title="Quitar del seguimiento" onclick="dejarDeSeguir(${s.id})">✖</button>`:""}
-        </div>`;}).join("");
-    }).join("");
-    if(!porAula)return"";
-    return`<div class="card"><div class="card-hdr"><h4>🎓 ${esc(c.nombre)}</h4>${celdaDictamen(c)}</div><div class="card-body" style="padding-top:4px">${porAula}</div></div>`;
-  }).join("");
-  const vacio=segEstado==="pendiente"?"No hay observaciones pendientes en esta selección."
-    :segEstado==="subsanada"?"Todavía no hay observaciones subsanadas en esta selección."
-    :`No hay observaciones en seguimiento.${edita?" Usá <strong>Elegir observaciones</strong> para sumarlas.":""}`;
-  return`<div style="display:flex;gap:8px;margin-bottom:14px">${filtros}</div>${bloques||`<div class="alert al-info"><span>ℹ️</span><div>${vacio}</div></div>`}`;
-}
-
-// Vista 2: todas las observaciones de evaluaciones cerradas, para elegir cuáles seguir
-function htmlSegAgregar(carreras,edita){
-  const bloques=carreras.map(c=>{
-    const porAula=aulasDe(c.id).map(a=>{
-      const obs=observacionesAula(a);
-      if(!obs.length)return"";
-      const seguidas=obs.filter(o=>itemSeg(o.clave)).length;
-      return`<div class="seg-aula">💻 ${esc(a.asignatura)} <span class="pill">${obs.length} observaciones · ${seguidas} en seguimiento</span></div>`+obs.map(o=>{
-        const u=getUsuario(o.uid);
-        const ya=itemSeg(o.clave);
-        const baja=o.valor&&+o.valor<=2;
-        return`<div class="seg-item"${ya?' style="opacity:.6"':""}>
-          <div class="seg-cuerpo">
-            <div class="seg-crit"><span style="color:${colorCrit(o.critId)}">${esc(rotuloCrit(o.critId))}</span>${o.valor?badgeNivel(o.valor):""}${baja?'<span class="badge b-crit">Valoración baja</span>':""}</div>
-            <div class="seg-texto">“${esc(o.texto)}”</div>
-            <div class="seg-meta">Observó: <strong>${esc(u?u.nombre:"–")}</strong></div>
-          </div>
-          ${ya?'<span class="badge b-comp" style="white-space:nowrap">✓ En seguimiento</span>'
-             :edita?`<button class="btn btn-sm btn-prim" style="white-space:nowrap" onclick="seguirObservacion('${o.clave}')">➕ Seguir</button>`:""}
-        </div>`;}).join("");
-    }).join("");
-    if(!porAula)return"";
-    return`<div class="card"><div class="card-hdr"><h4>🎓 ${esc(c.nombre)}</h4>${celdaDictamen(c)}</div><div class="card-body" style="padding-top:4px">${porAula}</div></div>`;
-  }).join("");
-  return`<div class="alert al-info"><span>ℹ️</span><div>Se listan las observaciones de las <strong>evaluaciones ya cerradas</strong>. Las marcadas con <em>Valoración baja</em> corresponden a criterios valorados con 1 o 2 por ese evaluador.</div></div>
-  ${bloques||'<div class="alert al-warn"><span>⏳</span><div>Todavía no hay evaluaciones cerradas con observaciones en esta selección.</div></div>'}`;
+// ---------- datos iniciales del circuito (demostración) ----------
+function inicializarCircuito(){
+  USUARIOS.forEach(u=>{
+    if(u.passFecha===undefined)u.passFecha="2026-10-01";
+    if(u.debeCambiar===undefined)u.debeCambiar=false;
+    u.intentos=u.intentos||0;u.bloqueado=!!u.bloqueado;
+  });
+  AULAS.forEach(a=>a.evaluadoresIds.forEach((uid,k)=>{
+    const p=puesto(a,k);
+    if(cerradaPuesto(a,k)&&!p.estado){
+      const bajos=criteriosBajos(a,k);
+      p.autor=uid;p.fechaCierre=a.fechaEval;
+      p.obs={tiene:bajos.length>0,auto:bajos.length>0,manual:false,motivo:"",parcial:false};
+      p.estado=bajos.length?"con_observaciones":"cerrada";
+      p.historial.push({fecha:fmtFecha(a.fechaEval),tipo:"Cierre",por:nombreDe(uid),detalle:bajos.length?`Con observaciones (${bajos.length} criterio/s con 2 o menos)`:"Sin observaciones"});
+    }
+  }));
+  // Aula 101, evaluación 3: ya subsanada (accesibilidad 2 → 4), para ver una revisión verificada
+  const a101=getAula(101);
+  if(a101){
+    const k=2,p=puesto(a101,k),antes=valoresColumna(a101,k),despues=JSON.parse(JSON.stringify(antes));
+    despues.c11_accesibilidad={e:"4",c:"Se reemplazaron los PDF escaneados por versiones con texto accesible."};
+    a101.valoraciones.c11_accesibilidad.e3="4";a101.valoraciones.c11_accesibilidad.c3=despues.c11_accesibilidad.c;
+    p.rondas.push({motivo:"subsanacion",razon:"",revisorId:"u5",antes,despues,obsRevision:"Se verificó en el aula que todos los materiales de lectura son PDF accesibles.",
+      fechaEnvio:"2026-06-05",devoluciones:[],posteriorDictamen:false,verificacion:{por:"Yanina",fecha:"2026-06-10",resultado:"subsanada",comentario:""}});
+    p.obs={tiene:false,auto:false,manual:false,motivo:"",parcial:false};p.estado="subsanada";
+    p.historial.push({fecha:"02/05/2026",tipo:"Revisor asignado",por:"Yanina",detalle:"Sarmiento, Mariana P."},
+                     {fecha:"05/06/2026",tipo:"Revisión reenviada",por:"Sarmiento, Mariana P.",detalle:"1 criterio/s modificados"},
+                     {fecha:"10/06/2026",tipo:"Verificación: Subsanada",por:"Yanina",detalle:""});
+  }
+  // Aula 301, evaluación 1: revisión reenviada, esperando verificación
+  const a301=getAula(301);
+  if(a301){
+    const k=0,p=puesto(a301,k),antes=valoresColumna(a301,k),valores=JSON.parse(JSON.stringify(antes));
+    valores.c11_accesibilidad={e:"4",c:"Se agregaron subtítulos a todos los videos de las clases grabadas."};
+    p.revision={motivo:"subsanacion",razon:"",revisorId:"u3",asignadaPor:"Yanina",fechaAsig:"2026-07-01",antes,valores,
+      obsRevision:"El docente subtituló los 12 videos del aula; verificado en las unidades 1 a 4.",estado:"reenviada",devoluciones:[],fechaEnvio:"2026-07-08"};
+    p.estado="reenviada";
+    p.historial.push({fecha:"01/07/2026",tipo:"Revisor asignado",por:"Yanina",detalle:"Dario"},
+                     {fecha:"08/07/2026",tipo:"Revisión reenviada",por:"Dario",detalle:"1 criterio/s modificados"});
+  }
+  AUDITORIA.push(
+    {fecha:"02/05/2026 10:14:00",usuario:"Yanina",perfil:"coordinador",accion:"Asignó revisor",detalle:"evaluación 3 del aula \"Comportamiento Organizacional\" → Sarmiento, Mariana P."},
+    {fecha:"10/06/2026 16:40:00",usuario:"Yanina",perfil:"coordinador",accion:"Verificó una revisión",detalle:"evaluación 3 del aula \"Comportamiento Organizacional\" · Subsanada"},
+    {fecha:"08/07/2026 12:05:00",usuario:"Dario",perfil:"evaluador",accion:"Reenvió una revisión",detalle:"evaluación 1 del aula \"Paradigmas de Programación\""});
 }
 
 // ============================================================
@@ -2542,7 +3175,7 @@ function htmlSegAgregar(carreras,edita){
 function htmlContinuidad(){
   const conDictamen=CARRERAS.filter(c=>c.emitido);
   const filas=conDictamen.map(c=>{
-    const r=resumenSeg(aulasDe(c.id).map(a=>a.id));
+    const r=obsPendientes(c.id);
     return`<tr>
       <td style="font-weight:600">${esc(c.nombre)}</td>
       <td style="font-size:12px;color:#546E7A">${esc(c.facultad)}</td>
@@ -2755,7 +3388,7 @@ function htmlEvaluadores(){
         </div>
         <div class="fg2" style="margin-bottom:14px">
           <div class="fg-item"><label>Mail institucional</label><input type="email" id="ev-mail" placeholder="nombre@utn.edu.ar"/></div>
-          <div class="fg-item"><label>Contraseña inicial</label><input id="ev-pass" value="cea2026"/></div>
+          <div class="fg-item"><label>Contraseña</label><div style="font-size:12px;color:#78909C;padding-top:8px">Se genera una contraseña temporal y se envía por mail. En el primer ingreso tendrá que cambiarla.</div></div>
         </div>
         <div style="display:flex;gap:8px">
           <button class="btn btn-prim" onclick="crearEvaluador()">💾 Dar de alta</button>
@@ -2771,23 +3404,16 @@ function htmlEvaluadores(){
 }
 
 function crearEvaluador(){
-  const nombre=document.getElementById("ev-nombre").value.trim();
-  const dni=document.getElementById("ev-dni").value.trim();
-  const mail=document.getElementById("ev-mail").value.trim();
-  const pass=document.getElementById("ev-pass").value.trim();
-  if(!nombre||!dni||!mail){alert("Complete nombre, DNI y mail.");return;}
-  if(USUARIOS.find(u=>u.dni===dni)){alert("Ya existe un usuario con ese DNI.");return;}
-  USUARIOS.push({id:"u"+Date.now(),dni,pass,nombre,rol:"Evaluador/a",perfil:"evaluador",mail,activo:true});
-  simularMail(mail,"CEA-UTN: alta en el sistema de evaluación",
-    `Estimado/a ${nombre},\n\nSe le dio de alta en el sistema CEA-UTN para la evaluación de aulas virtuales (Rúbrica ${RUBRICA_VERSION}).\n\n  Usuario (DNI): ${dni}\n  Contraseña inicial: ${pass}\n\nIngrese en https://cea.utn.edu.ar y cambie su contraseña en el primer acceso.\n\nCEA – UTN`);
-  toggleForm('form-alta-eval');
-  goto("evaluadores");
-  setTimeout(()=>alert(`✅ Evaluador/a dado/a de alta.\n📧 Mail de bienvenida enviado a ${mail}`),200);
+  altaUsuario(document.getElementById("ev-nombre").value.trim(),document.getElementById("ev-dni").value.trim(),
+    document.getElementById("ev-mail").value.trim(),"evaluador");
 }
 
 function toggleActivo(uid){
   const u=getUsuario(uid);if(!u)return;
-  u.activo=!u.activo;goto("evaluadores");
+  if(u.id===usuarioActual.id){alert("No podés desactivar tu propia cuenta.");return;}
+  u.activo=!u.activo;
+  registrar(u.activo?"Activó una cuenta":"Desactivó una cuenta",u.nombre);
+  renderPagina();
 }
 
 function modalEvaluador(uid){
@@ -2827,6 +3453,7 @@ function asignarAula(uid){
   if(!a||!u)return;
   if(carreraBloqueada(a.carreraId)){avisoBloqueo(a.carreraId);return;}
   if(a.evaluadoresIds.length>=3){alert("Ese aula ya tiene 3 evaluadores.");return;}
+  if(excedeEquipo(a.carreraId,[uid])){alert(avisoEquipo(a.carreraId));return;}
   a.evaluadoresIds.push(uid);
   a.completadas[uid]=false;
   notificarAsignacion(u,a,getCarrera(a.carreraId));
@@ -2917,17 +3544,21 @@ function guardarUsuario(uid){
   if(USUARIOS.find(x=>x.dni===dni&&x.id!==uid)){alert("Ya existe otro usuario con ese DNI.");return;}
   const perfil=document.getElementById("um-perfil").value;
   const pass=document.getElementById("um-pass").value.trim();
+  if(u.id===usuarioActual.id&&perfil!==u.perfil){alert("No podés cambiar tu propio perfil.");return;}
+  if(pass){const e=validarPassword(pass);if(e){alert(e);return;}}
   const rolLabels={administrador:"Administrador",coordinador:"Coordinador",evaluador:"Evaluador/a"};
   u.nombre=nombre;u.dni=dni;u.mail=mail;u.perfil=perfil;u.rol=rolLabels[perfil];
   u.activo=document.getElementById("um-activo").value==="1";
-  if(pass)u.pass=pass;
+  if(pass){u.pass=pass;u.passFecha=hoyISO();u.debeCambiar=POLITICA.cambioPrimerIngreso&&u.id!==usuarioActual.id;}
+  registrar("Modificó un usuario",`${u.nombre} (${perfil})${pass?" · nueva contraseña":""}`);
   closeModal();goto(paginaActual);
 }
 
 function resetPass(uid){
   const u=getUsuario(uid);if(!u)return;
-  const nueva="cea"+Math.floor(1000+Math.random()*9000);
-  u.pass=nueva;
+  const nueva=passTemporal();
+  u.pass=nueva;u.passFecha=hoyISO();u.debeCambiar=POLITICA.cambioPrimerIngreso;u.bloqueado=false;u.intentos=0;
+  registrar("Blanqueó una contraseña",u.nombre);
   simularMail(u.mail,"CEA-UTN: restablecimiento de contraseña",
     `Estimado/a ${u.nombre},\n\nUn administrador restableció su contraseña.\nContraseña temporal: ${nueva}\n\nCámbiela al ingresar.\n\nCEA – UTN`);
   alert(`✅ Contraseña restablecida.\n📧 Enviada a ${u.mail}`);
@@ -2937,11 +3568,13 @@ function resetPass(uid){
 // MODAL
 // ============================================================
 function cerrarModal(e){if(e.target===document.getElementById("modal-global"))closeModal();}
-function closeModal(){
+function closeModal(forzar){
+  if(modalBloqueante&&!forzar)return;
   document.getElementById("modal-global").style.display="none";
   destruirCharts();
 }
 document.addEventListener("keydown",e=>{if(e.key==="Escape")closeModal();});
+inicializarCircuito();
 
 // Sirve también para Ctrl+P, no solo para los botones de Imprimir.
 window.addEventListener("beforeprint",()=>{
